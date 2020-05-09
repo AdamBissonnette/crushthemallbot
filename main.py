@@ -44,7 +44,11 @@ def main():
 		get_bitmap('assets/chest_brown3.png'),
 	]
 	gold_chests = [
-		get_bitmap('assets/chest_gold_step1.png'),
+		[
+			get_bitmap('assets/chest_gold_step1.png'),
+			get_bitmap('assets/chest_gold2.png'),
+			get_bitmap('assets/chest_gold3.png'),
+		],
 		get_bitmap('assets/chest_gold_step2.png'),
 		get_bitmap('assets/chest_gold_step3.png'),
 	]
@@ -57,8 +61,10 @@ def main():
 	]
 
 	decline = get_bitmap('assets/decline.png')
+	cta_app = get_bitmap('assets/crush_them_all_app.png')
 
 	functions = [
+		cta_app,
 		decline,
 		get_bitmap('assets/okay.png'),
 		get_bitmap('assets/X.png'),
@@ -94,36 +100,44 @@ def main():
 		get_bitmap('assets/dungeon_okay.png'),
 	]
 
-	# expedition_steps = [
-	# 	get_bitmap('assets/screen_battle.png'),
-	# 	get_bitmap('assets/exped_step1.png'),
-	# ]
+	expedition_steps = [
+		get_bitmap('assets/exped_step0_reward_ready.png'),
+		get_bitmap('assets/screen_battle.png'),
+		get_bitmap('assets/exped_step1.png'),
+	]
 
-	# exped_start = [
-	# 	get_bitmap('assets/exped_open.png'),
-	# 	get_bitmap('assets/exped_autofill.png'),
-	# 	get_bitmap('assets/exped_start.png'),
-	# ]
+	exped_start = [
+		[get_bitmap('assets/exped_step2_run.png'),
+		get_bitmap('assets/exped_step2_run2.png')],
+		get_bitmap('assets/exped_step3_autofill.png'),
+		get_bitmap('assets/exped_step4_start.png'),
+	]
 
-	# exped_collect = [
-	# 	get_bitmap('assets/exped_collect.png'),
-	# 	get_bitmap('assets/okay.png'),
-	# ]
+	exped_collect = [
+		[get_bitmap('assets/exped_step5_collect.png'),
+		get_bitmap('assets/exped_step5_collect2.png'),
+		get_bitmap('assets/exped_step5_collect3.png')
+		],
+		get_bitmap('assets/exped_step6_confirm.png'),
+	]
 
 	screen = refresh_screen()
 	screen.save("screen.png")
 	# return
 
-	ascend_cooldown = (1300/17)*60
-	dungeon_cooldown = 900
-	weapon_cooldown = 1
+	ascend_cooldown = (2300/17)*60
+	dungeon_cooldown = 1200
+	exped_cooldown = 600
+	weapon_cooldown = 0.7
 	find_and_click_asset(screens)
-	last_dungeon_run = None#datetime.now()
+	last_dungeon_run = datetime.now()
+	last_exped_run = None #datetime.now()
 	last_weapon_run = None
 	last_ascend = datetime.now()
 	iteration = 0
 	stopping = False
 	while not stopping:
+		# last_exped_run = do_expedition(exped_cooldown, last_exped_run, expedition_steps, exped_start, exped_collect)
 		# do_functions(functions)
 		# check_if_ad_is_done(5)
 		# do_weapons(weapons, edge)
@@ -144,6 +158,9 @@ def main():
 			if do_dungeon(dungeon_steps, decline, weapons, edge):
 				last_dungeon_run = datetime.now()
 				time.sleep(1)
+		speedad_run = do_speedad(speedad_steps)
+
+		last_exped_run = do_expedition(exped_cooldown, last_exped_run, expedition_steps, exped_start, exped_collect)
 		# return
 
 		if iteration % 15 == 0:
@@ -170,8 +187,63 @@ def main():
 
 		iteration = iteration + 1
 
-def do_expedition(expedtion_steps):
+def do_expedition(exped_cooldown, last_exped_run, expedition_steps, exped_start, exped_collect):
+	reward_ready = find_asset(expedition_steps[0], tolerance=0.2)
+
+	if reward_ready or check_cooldown(last_exped_run, exped_cooldown):
+		in_exped = do_steps([expedition_steps[1], expedition_steps[2]])
+		collected = do_steps(exped_collect, loop=True, tolerance=0.3)
+		started = do_steps(exped_start, loop=True, tolerance=0.3)
+
+		# print(in_exped, collected, started)
+
+		if in_exped:
+			escape_back(2)
+
+		return datetime.now()
+	return last_exped_run
+
+def do_steps(steps, delay=1, loop=False, tolerance=0.2):
+	completed_once = False
+	clicked_step = True
+	while clicked_step:
+		for step in steps:
+			step_done = find_and_click_asset(step, tolerance=tolerance)
+			if not step_done:
+				clicked_step = False
+				continue
+			time.sleep(delay)
+		if step_done:
+			completed_once = True
+	return completed_once
+
+def escape_back(times=1):
+	for _ in range(0, times):
+		autopy.key.tap(autopy.key.Code.ESCAPE)
+		time.sleep(1)
+		on_exit = is_on_exit()
+		# print(on_exit)
+		if on_exit:
+			click_asset(on_exit)
+			time.sleep(0.3)
+			return
+
+def is_on_exit():
+	decline = get_bitmap('assets/decline.png')
+	return find_asset(assets=decline, tolerance=0.2)
+
+def scroll_up_from_asset(assets, distance):
+	#toggle click on asset
+	#slow move up
+	#release click
 	return
+
+def is_out_of_app():
+	app_screen = get_bitmap('assets/crush_them_all_app.png')
+
+	if find_asset(assets=app_screen, tolerance=0.2):
+		return True
+	return False
 
 def is_in_main_area():
 	main_area_markers = [
@@ -179,7 +251,7 @@ def is_in_main_area():
 		get_bitmap('assets/screen_village.png'),
 	]
 
-	if find_asset(main_area_markers, tolerance=0.2):
+	if find_asset(assets=main_area_markers, tolerance=0.2):
 		return True
 	return False
 
@@ -230,11 +302,11 @@ def do_ascend(ascend_steps):
 		if find_and_click_asset(ascend_steps[1]):
 			find_and_click_asset(ascend_steps[2])
 			time.sleep(5)
-			autopy.key.tap(autopy.key.Code.ESCAPE)
+			escape_back()
 			time.sleep(1)
-			autopy.key.tap(autopy.key.Code.ESCAPE)
+			escape_back()
 			time.sleep(1)
-			autopy.key.tap(autopy.key.Code.ESCAPE)
+			escape_back()
 			time.sleep(1)
 			return True
 		else:
@@ -266,6 +338,9 @@ def launch_ad(ad_asset, timeout=6):
 		if is_in_main_area():
 			return False
 		
+		if is_out_of_app():
+			return False
+
 		ad_complete = False
 		while not ad_complete:
 			ad_complete = check_if_ad_is_done(10)
@@ -276,7 +351,7 @@ def launch_ad(ad_asset, timeout=6):
 		return False
 
 def check_if_ad_is_done(timeout):
-	autopy.key.tap(autopy.key.Code.ESCAPE)
+	escape_back()
 
 	time.sleep(1)
 
