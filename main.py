@@ -5,496 +5,483 @@ import time
 # import pynput
 from datetime import datetime
 
-def get_bitmap(file):
-	return autopy.bitmap.Bitmap.open(file)
+class Bot():
 
-def refresh_screen(full=True):
-	screen = None
-	if full:
-		screen = autopy.bitmap.capture_screen(((0,0), (390,730)))
-	else:
-		screen = autopy.bitmap.capture_screen(((0,0), (390,380)))
-	return screen
+	def __init__(self):
+		self.screens = [
+			Bot.get_bitmap('assets/screen_heroes.png'),
+			Bot.get_bitmap('assets/screen_village.png'),
+		]
+		self.brown_chests = [
+			Bot.get_bitmap('assets/chest_brown.png'),
+			Bot.get_bitmap('assets/chest_brown2.png'),
+			Bot.get_bitmap('assets/chest_brown3.png'),
+		]
+		self.gold_chests = [
+			[
+				Bot.get_bitmap('assets/chest_gold_step1.png'),
+				Bot.get_bitmap('assets/chest_gold2.png'),
+				Bot.get_bitmap('assets/chest_gold3.png'),
+			],
+			Bot.get_bitmap('assets/chest_gold_step2.png'),
+			Bot.get_bitmap('assets/chest_gold_step3.png'),
+		]
+		self.weapons = [
+			Bot.get_bitmap('assets/weapon_swords.png'),
+			Bot.get_bitmap('assets/weapon_daggers.png'),
+			Bot.get_bitmap('assets/weapon_blobs.png'),
+			Bot.get_bitmap('assets/weapon_fireball.png'),
+			Bot.get_bitmap('assets/weapon_katana.png'),
+		]
 
-def check_cooldown(last_use, cooldown, log=False):
-	if not last_use:
-		return True
-	timer = datetime.now() - last_use
-	seconds = timer.total_seconds()
+		self.decline = Bot.get_bitmap('assets/decline.png')
+		self.cta_app = Bot.get_bitmap('assets/crush_them_all_app.png')
 
-	if log:
-		next_asc_minutes = round((cooldown - seconds) / 60, 2)
-		print(str(next_asc_minutes))
-		f = open("log.txt", "w")
-		f.write("Python bot for mobile game:\ncrush them all\n\nNext ascend in:\n{} minutes.".format(str(next_asc_minutes)))
-		f.close()
+		self.functions = [
+			self.cta_app,
+			self.decline,
+			Bot.get_bitmap('assets/okay.png'),
+			Bot.get_bitmap('assets/X.png'),
+			Bot.get_bitmap('assets/chest_gold_step3.png'),
+			Bot.get_bitmap('assets/function_upgrade_heroes.png'),
+			Bot.get_bitmap('assets/function_upgrade_villages.png'),
+		]
+		self.collections = [
+			Bot.get_bitmap('assets/function_collect.png'),
+		]
+		self.edge = [Bot.get_bitmap('assets/edge.png')]
+		self.edge_loc = None
 
-	if seconds > cooldown:
-		return True
-	return False
+		self.speedad_steps = [
+			Bot.get_bitmap('assets/speedad_step1.png'),
+			Bot.get_bitmap('assets/accept.png')
+		]
 
-def main():
-	screens = [
-		get_bitmap('assets/screen_heroes.png'),
-		get_bitmap('assets/screen_village.png'),
-	]
-	brown_chests = [
-		get_bitmap('assets/chest_brown.png'),
-		get_bitmap('assets/chest_brown2.png'),
-		get_bitmap('assets/chest_brown3.png'),
-	]
-	gold_chests = [
-		[
-			get_bitmap('assets/chest_gold_step1.png'),
-			get_bitmap('assets/chest_gold2.png'),
-			get_bitmap('assets/chest_gold3.png'),
-		],
-		get_bitmap('assets/chest_gold_step2.png'),
-		get_bitmap('assets/chest_gold_step3.png'),
-	]
-	weapons = [
-		get_bitmap('assets/weapon_swords.png'),
-		get_bitmap('assets/weapon_daggers.png'),
-		get_bitmap('assets/weapon_blobs.png'),
-		get_bitmap('assets/weapon_fireball.png'),
-		get_bitmap('assets/weapon_katana.png'),
-	]
+		self.ascend_steps = [
+			Bot.get_bitmap('assets/ascend_step1.png'),
+			[Bot.get_bitmap('assets/ascend_step2.png')],
+			Bot.get_bitmap('assets/ascend_accept.png'),
+			Bot.get_bitmap('assets/ascend_step4.png'),
+			Bot.get_bitmap('assets/ascend_step5.png')
+		]
 
-	decline = get_bitmap('assets/decline.png')
-	cta_app = get_bitmap('assets/crush_them_all_app.png')
+		self.dungeon_steps = [
+			Bot.get_bitmap('assets/screen_battle.png'),
+			Bot.get_bitmap('assets/dungeon_step1.png'),
+			Bot.get_bitmap('assets/dungeon_step2.png'),
+			Bot.get_bitmap('assets/dungeon_step3.png'),
+			Bot.get_bitmap('assets/decline.png'),
+			Bot.get_bitmap('assets/dungeon_edge.png'),
+			Bot.get_bitmap('assets/dungeon_okay.png'),
+		]
 
-	functions = [
-		cta_app,
-		decline,
-		get_bitmap('assets/okay.png'),
-		get_bitmap('assets/X.png'),
-		get_bitmap('assets/chest_gold_step3.png'),
-		get_bitmap('assets/function_upgrade_heroes.png'),
-		get_bitmap('assets/function_upgrade_villages.png'),
-	]
-	collections = [
-		get_bitmap('assets/function_collect.png'),
-	]
-	edge = [get_bitmap('assets/edge.png')]
+		self.expedition_steps = [
+			Bot.get_bitmap('assets/exped_step0_reward_ready.png'),
+			Bot.get_bitmap('assets/screen_battle.png'),
+			Bot.get_bitmap('assets/exped_step1.png'),
+		]
 
-	speedad_steps = [
-		get_bitmap('assets/speedad_step1.png'),
-		get_bitmap('assets/accept.png')
-	]
+		self.exped_start = [
+			[Bot.get_bitmap('assets/exped_step2_run.png'),
+			Bot.get_bitmap('assets/exped_step2_run2.png')],
+			Bot.get_bitmap('assets/exped_step3_autofill.png'),
+			Bot.get_bitmap('assets/exped_step4_start.png'),
+		]
 
-	ascend_steps = [
-		get_bitmap('assets/ascend_step1.png'),
-		[get_bitmap('assets/ascend_step2.png')],
-		get_bitmap('assets/ascend_accept.png'),
-		get_bitmap('assets/ascend_step4.png'),
-		get_bitmap('assets/ascend_step5.png')
-	]
+		self.exped_collect = [
+			[Bot.get_bitmap('assets/exped_step5_collect.png'),
+			Bot.get_bitmap('assets/exped_step5_collect2.png'),
+			Bot.get_bitmap('assets/exped_step5_collect3.png')
+			],
+			Bot.get_bitmap('assets/exped_step6_confirm.png'),
+		]
 
-	dungeon_steps = [
-		get_bitmap('assets/screen_battle.png'),
-		get_bitmap('assets/dungeon_step1.png'),
-		get_bitmap('assets/dungeon_step2.png'),
-		get_bitmap('assets/dungeon_step3.png'),
-		get_bitmap('assets/decline.png'),
-		get_bitmap('assets/dungeon_edge.png'),
-		get_bitmap('assets/dungeon_okay.png'),
-	]
-
-	expedition_steps = [
-		get_bitmap('assets/exped_step0_reward_ready.png'),
-		get_bitmap('assets/screen_battle.png'),
-		get_bitmap('assets/exped_step1.png'),
-	]
-
-	exped_start = [
-		[get_bitmap('assets/exped_step2_run.png'),
-		get_bitmap('assets/exped_step2_run2.png')],
-		get_bitmap('assets/exped_step3_autofill.png'),
-		get_bitmap('assets/exped_step4_start.png'),
-	]
-
-	exped_collect = [
-		[get_bitmap('assets/exped_step5_collect.png'),
-		get_bitmap('assets/exped_step5_collect2.png'),
-		get_bitmap('assets/exped_step5_collect3.png')
-		],
-		get_bitmap('assets/exped_step6_confirm.png'),
-	]
-
-	screen = refresh_screen()
-	screen.save("screen.png")
-	# return
-
-	ascend_cooldown = (2700/17)*60
-	dungeon_cooldown = 1200
-	exped_cooldown = 600
-	weapon_cooldown = 1
-	find_and_click_asset(screens)
-	last_dungeon_run = None #datetime.now()
-	last_exped_run = datetime.now()
-	last_weapon_run = None
-	last_ascend = datetime.now()
-	iteration = 0
-	stopping = False
-	while not stopping:
-		# last_dungeon_run = do_dungeon(dungeon_cooldown,
-		# 								last_dungeon_run,
-		# 								dungeon_steps,
-		# 								decline,
-		# 								weapons,
-		# 								edge)
-		# return
-		# last_exped_run = do_expedition(exped_cooldown, last_exped_run, expedition_steps, exped_start, exped_collect)
-		# do_functions(functions)
-		# check_if_ad_is_done(5)
-		# do_weapons(weapons, edge)
-		# return
-		if check_cooldown(last_ascend, ascend_cooldown, log=True):
-			# screen = refresh_screen()
-			# screen.save("ascend{}.png".format(str(iteration)))
-			ascended = do_ascend(ascend_steps)
-			if ascended:
-				last_ascend = datetime.now()
-				ascend_cooldown = (3500/17)*60
-				time.sleep(1)
+	def main(self):
+		screen = Bot.refresh_screen()
+		screen.save("screen.png")
 		# return
 
-		speedad_run = do_speedad(speedad_steps)
-		last_dungeon_run = do_dungeon(dungeon_cooldown,
-										last_dungeon_run,
-										dungeon_steps,
-										decline,
-										weapons,
-										edge)
-		last_exped_run = do_expedition(exped_cooldown,
-										last_exped_run,
-										expedition_steps,
-										exped_start,
-										exped_collect)
-		# return
-
-		if iteration % 15 == 0:
-			# time.sleep(0.5)
-			switch_screens(screens)
+		self.ascend_cooldown = (3500/17)*60
+		self.dungeon_cooldown = 1200
+		self.exped_cooldown = 600
+		self.weapon_cooldown = 1
+		self.screen_switch_cooldown = 60
+		self.functions_cooldown = 20
 		
-		for _ in range(1,4):
-			if not speedad_run:
-				do_chests(brown_chests, gold_chests)
-				found_edge = find_asset(screen, edge)
-				if found_edge:
-					click_asset(found_edge, 2, 0, -35, sleep_after_click=0)
-					do_chests(brown_chests, gold_chests)
-
-			if check_cooldown(last_weapon_run, weapon_cooldown):
-				weapon_run = do_weapons(weapons, edge)
-				if weapon_run:
-					last_weapon_run = datetime.now()
+		self.last_dungeon_run = None #datetime.now()
+		self.last_exped_run = None #datetime.now()
+		self.last_weapon_run = None
+		self.last_ascend = datetime.now()
+		self.last_screen_switch = None #datetime.now()
+		self.last_function_run = None #datetime.now()
+		self.stopping = False
 		
-		if iteration % 3 == 0:
-			do_collection(collections)
-		elif iteration % 4 == 1:
-			do_functions(functions)
+		self.switch_screens()
 
-		iteration = iteration + 1
+		while not self.stopping:
+			# start = time.perf_counter()
+			self.do_ascend()
+			self.do_speedad()
+			self.do_dungeon()
+			self.do_expedition()
+			# print ("standard functions runtime {}".format(time.perf_counter() - start))
 
-def do_expedition(exped_cooldown, last_exped_run, expedition_steps, exped_start, exped_collect):
-	reward_ready = find_asset(expedition_steps[0], tolerance=0.2)
+			# start = time.perf_counter()
+			self.do_chests()
+			# print ("chest 1 runtime {}".format(time.perf_counter() - start))
+			# start = time.perf_counter()
+			self.do_edge()
+			# print ("edge runtime {}".format(time.perf_counter() - start))
+			# start = time.perf_counter()
+			self.do_chests()
+			# print ("chest 2 runtime {}".format(time.perf_counter() - start))
+			# start = time.perf_counter()
+			self.do_weapons()
+			# print ("weapons runtime {}".format(time.perf_counter() - start))
+			
+			# start = time.perf_counter()
+			self.switch_screens()
+			# print ("switch screens runtime {}".format(time.perf_counter() - start))
+			# start = time.perf_counter()
+			self.do_functions()
+			# print ("functions runtime {}".format(time.perf_counter() - start))
+			# return
 
-	if reward_ready or check_cooldown(last_exped_run, exped_cooldown):
-		in_exped = do_steps([expedition_steps[1], expedition_steps[2]])
-		collected = do_steps(exped_collect, loop=True, tolerance=0.3)
-		started = do_steps(exped_start, loop=True, tolerance=0.3)
+	def do_expedition(self):
+		reward_ready = Bot.find_asset(self.expedition_steps[0], tolerance=0.2)
 
-		# print(in_exped, collected, started)
+		if reward_ready or Bot.check_cooldown(self.last_exped_run, self.exped_cooldown):
+			in_exped = Bot.do_steps([self.expedition_steps[1], self.expedition_steps[2]])
+			Bot.do_steps(self.exped_collect, loop=True, tolerance=0.3)
+			Bot.do_steps(self.exped_start, loop=True, tolerance=0.3)
 
-		if in_exped:
-			escape_back(2)
+			if in_exped:
+				self.escape_back(self.decline, 2)
 
-		return datetime.now()
-	return last_exped_run
-
-def do_steps(steps, delay=1, loop=False, tolerance=0.2):
-	completed_once = False
-	clicked_step = True
-	while clicked_step:
-		for step in steps:
-			step_done = find_and_click_asset(step, tolerance=tolerance)
-			if not step_done:
-				clicked_step = False
-				continue
-			time.sleep(delay)
-		if step_done:
-			completed_once = True
-	return completed_once
-
-def escape_back(times=1):
-	for _ in range(0, times):
-		autopy.key.tap(autopy.key.Code.ESCAPE)
-		time.sleep(1)
-		on_exit = is_on_exit()
-		# print(on_exit)
-		if on_exit:
-			click_asset(on_exit)
-			time.sleep(0.3)
-			return
-
-def is_on_exit():
-	decline = get_bitmap('assets/decline.png')
-	return find_asset(assets=decline, tolerance=0.2)
-
-def scroll_up_from_asset(assets, distance):
-	#toggle click on asset
-	#slow move up
-	#release click
-	return
-
-def is_out_of_app():
-	app_screen = get_bitmap('assets/crush_them_all_app.png')
-
-	if find_asset(assets=app_screen, tolerance=0.2):
-		return True
-	return False
-
-def is_in_main_area():
-	main_area_markers = [
-		get_bitmap('assets/screen_heroes.png'),
-		get_bitmap('assets/screen_village.png'),
-	]
-
-	if find_asset(assets=main_area_markers, tolerance=0.2):
-		return True
-	return False
-
-def do_dungeon(dungeon_cooldown, last_dungeon_run, dungeon_steps, decline, weapons, edge):
-	if check_cooldown(last_dungeon_run, dungeon_cooldown):
-		new_dungeon_runtime = datetime.now()
-
-	do_steps([dungeon_steps[0], dungeon_steps[1], dungeon_steps[2], dungeon_steps[3]], delay=0.3)
-
-	decline_found = find_and_click_asset(decline, tolerance=0.2)
-
-	if is_in_main_area():
-		return last_dungeon_run
-
-	if not decline_found:
-		time.sleep(0.5)
-		victory = False
-		while not victory:
-			time.sleep(4)
-			victory = do_dungeon_boss(weapons, dungeon_steps[5], dungeon_steps[6])
-
-	return new_dungeon_runtime
-
-		# do_dungeon_boss(dunweapons, edge)
-		# autopy.key.tap(autopy.key.Code.ESCAPE)
-
-	# find_and_click_asset(dungeon_steps[4])
-	# reward_accepted = False
-	# while not reward_accepted:
-	# 	time.sleep(3)
-	# 	reward_accepted = find_and_click_asset(dungeon_steps[4])
-
-
-def do_dungeon_boss(weapons, edge, confirmation):
-	do_weapons(weapons, edge, 0.3)
-	time.sleep(1)
-
-	get_rewards = find_and_click_asset(confirmation, tolerance=0.2)
-	if not get_rewards:
-		return False
-	return True
-
-def do_ascend(ascend_steps):
-	if find_and_click_asset(ascend_steps[0], 3, tolerance=0.2, persistent=True):
-		if find_and_click_asset(ascend_steps[1]):
-			find_and_click_asset(ascend_steps[2])
-			time.sleep(5)
-			escape_back()
-			time.sleep(1)
-			escape_back()
-			time.sleep(1)
-			escape_back()
-			time.sleep(1)
+			self.last_exped_run = datetime.now()
+			Bot.find_and_click_asset(self.screens)
 			return True
-		else:
-			return False
-	else:
 		return False
 
-def do_speedad(speedad_steps):
-	speedad_ready = find_and_click_asset(speedad_steps[0], tolerance=0.2)
+	def escape_back(self, back_asset=None, times=1):
+		for _ in range(0, times):
+			autopy.key.tap(autopy.key.Code.ESCAPE)
+			time.sleep(1)
 
-	if speedad_ready:
-		ad_launched = launch_ad(speedad_steps[1])
-	
-		if ad_launched:
-			return True
-	
-	return False
-
-def launch_ad(ad_asset, timeout=7):
-	screen = refresh_screen()
-
-	ad_confirm = find_asset(screen, ad_asset, 0.2)
-
-	if ad_confirm:
-		click_asset(ad_confirm, 2)
-		time.sleep(timeout)
-
-		#check to see if the ad launched properly (look for ascend?)
-		if is_in_main_area():
-			return False
-		
-		if is_out_of_app():
-			return False
-
-		ad_complete = False
-		adtimeout = 60
-		adstart = datetime.now()
-		while not ad_complete :
-			if check_cooldown(adstart, adtimeout):
-				print("restarting app")
-				restart_app()
-				return False
-			ad_complete = check_if_ad_is_done(7)
-
-			if ad_complete:
+			if Bot.find_and_click_asset(back_asset, tolerance=0.2):
 				return True
-	else:
 		return False
 
-def restart_app():
-	exit_app()
-	time.sleep(10)
-	open_app()
-	time.sleep(10)
+	@staticmethod
+	def scroll_up_from_asset(assets, distance):
+		#toggle click on asset
+		#slow move up
+		#release click
+		return
 
-def open_app():
-	app_opened = False
-	while not app_opened:
-		app_opened = find_and_click_asset(get_bitmap("assets/crush_them_all_app.png"))
-	print ("app opened")
+	def is_out_of_app(self):
+		app_screen = self.cta_app
 
-def exit_app():
-	autopy.key.tap(autopy.key.Code.PAGE_UP)
-	time.sleep(5) #takes a while for the X to appear
-	find_and_click_asset(get_bitmap("assets/gamequit.png"))
-	
-
-def check_if_ad_is_done(timeout):
-	escape_back()
-
-	time.sleep(1)
-
-	screen = refresh_screen()
-	resume_button = [
-					get_bitmap("assets/ad_resume.png"), 
-					get_bitmap("assets/ad_resume2.png"),
-					get_bitmap("assets/ad_resume3.png"),
-					]
-	resume_found = find_asset(screen, resume_button, tolerance=0.2)
-	if resume_found:
-		click_asset(resume_found, 1)
-		time.sleep(timeout)
-		return False
-	else:
-		screen = refresh_screen()
-		ad_complete_needle = get_bitmap('assets/screen_battle.png')
-		ad_complete = find_asset(screen, ad_complete_needle, tolerance=0.2)
-		if ad_complete:
+		if Bot.find_asset(assets=app_screen, tolerance=0.2):
 			return True
+		return False
+
+	def is_in_main_area(self):
+		main_area_markers = self.screens
+
+		if Bot.find_asset(assets=main_area_markers, tolerance=0.2):
+			return True
+		return False
+
+	def do_dungeon(self):
+		if Bot.check_cooldown(self.last_dungeon_run, self.dungeon_cooldown):
+			new_dungeon_runtime = datetime.now()
+
+			steps_done = Bot.do_steps([self.dungeon_steps[0],
+					self.dungeon_steps[1],
+					self.dungeon_steps[2],
+					self.dungeon_steps[3]], delay=0.3)
+
+			decline_found = Bot.find_and_click_asset(self.decline, tolerance=0.2)
+
+			if self.is_in_main_area():
+				self.last_dungeon_run = new_dungeon_runtime
+				Bot.find_and_click_asset(self.screens)
+				return False
+
+			if not decline_found:
+				time.sleep(0.5)
+				victory = False
+				while not victory:
+					time.sleep(4)
+					victory = self.do_dungeon_boss()
+
+			self.last_dungeon_run = new_dungeon_runtime
+			Bot.find_and_click_asset(self.screens)
+			return True
+
+			# do_dungeon_boss(dunweapons, edge)
+			# autopy.key.tap(autopy.key.Code.ESCAPE)
+
+		# find_and_click_asset(dungeon_steps[4])
+		# reward_accepted = False
+		# while not reward_accepted:
+		# 	time.sleep(3)
+		# 	reward_accepted = find_and_click_asset(dungeon_steps[4])
+
+
+	def do_dungeon_boss(self):
+		# weapons, dungeon_steps[5], dungeon_steps[6]
+		self.do_weapons()
+		time.sleep(1)
+
+		get_rewards = Bot.find_and_click_asset(self.dungeon_steps[6], tolerance=0.2)
+		if not get_rewards:
+			return False
+		return True
+
+	def do_ascend(self):
+		if Bot.check_cooldown(self.last_ascend, self.ascend_cooldown, log=True):
+			if Bot.find_and_click_asset(self.ascend_steps[0], 3, tolerance=0.2, persistent=True):
+				if Bot.find_and_click_asset(self.ascend_steps[1]):
+					Bot.find_and_click_asset(self.ascend_steps[2])
+					time.sleep(5)
+					self.escape_back(self.decline)
+					time.sleep(1)
+					self.escape_back(self.decline)
+					time.sleep(1)
+					self.escape_back(self.decline)
+					time.sleep(1)
+					self.ascend_cooldown = (3500/17)*60
+					self.last_ascend = datetime.now()
+					time.sleep(1)
+					return True
+		return False
+
+	def do_speedad(self):
+		speedad_ready = Bot.find_and_click_asset(self.speedad_steps[0], tolerance=0.2)
+
+		if speedad_ready:
+			ad_launched = self.launch_ad(self.speedad_steps[1])
+		
+			if ad_launched:
+				return True
+		
+		return False
+
+	def launch_ad(self, ad_asset, timeout=7):
+		ad_confirm = Bot.find_and_click_asset(ad_asset, tolerance=0.2)
+		if ad_confirm:
+			time.sleep(timeout)
+
+			#check to see if the ad launched properly (look for ascend?)
+			if self.is_in_main_area():
+				return False
+			
+			#check to see if we crashed
+			if Bot.find_asset(None, self.cta_app, tolerance=0.2):
+				self.restart_app()
+				return False
+
+			ad_complete = False
+			adtimeout = 60
+			adstart = datetime.now()
+			while not ad_complete :
+				if Bot.check_cooldown(adstart, adtimeout):
+					print("restarting app")
+					self.restart_app()
+					return False
+				ad_complete = self.check_if_ad_is_done(7)
+
+				if ad_complete:
+					return True
 		else:
 			return False
 
-def do_chests(brown_chests, gold_chests):
-	screen = refresh_screen(False)
-	chest = find_asset(screen, brown_chests, 0.3)
+	def restart_app(self):
+		self.exit_app()
+		time.sleep(10)
+		self.open_app()
+		time.sleep(10)
 
-	if chest:
-		click_asset(chest)
+	def open_app(self):
+		app_opened = False
+		while not app_opened:
+			app_opened = Bot.find_and_click_asset(self.cta_app)
+		print ("app opened")
 
-	#gold_chests	
-	screen = refresh_screen(False)
-	chest = find_asset(screen, gold_chests[0], 0.3)
-	if chest:
-		click_asset(chest, 2)
-		time.sleep(0.2)
+	def exit_app(self):
+		autopy.key.tap(autopy.key.Code.PAGE_UP)
+		time.sleep(5) #takes a while for the X to appear
+		Bot.find_and_click_asset(Bot.get_bitmap("assets/gamequit.png"))
+		
+	def check_if_ad_is_done(self, timeout):
+		resume_button = [
+						Bot.get_bitmap("assets/ad_resume.png"), 
+						Bot.get_bitmap("assets/ad_resume2.png"),
+						Bot.get_bitmap("assets/ad_resume3.png"),
+						]
 
-		if launch_ad(gold_chests[1]):
-			time.sleep(1)
-			screen = refresh_screen()
-			confirm_reward = find_asset(screen, gold_chests[2])
-			if confirm_reward:
-				click_asset(confirm_reward)
+		resume_found = self.escape_back(resume_button)
 
-def switch_screens(screens):
-	find_and_click_asset(screens)
+		if resume_found:
+			time.sleep(timeout)
+			return False
+		else:
+			return self.is_in_main_area()
+			# screen = Bot.refresh_screen()
+			# ad_complete_needle = get_bitmap('assets/screen_battle.png')
+			# ad_complete = find_asset(screen, ad_complete_needle, tolerance=0.2)
+			# if ad_complete:
+			# 	return True
+			# else:
+			# 	return False
 
-def do_weapons(weapons, edge, tolerance=0):
-	screen = refresh_screen(False)
-	weapon = find_asset(screen, weapons, tolerance=tolerance)
-	found_edge = find_asset(screen, edge)
+	def do_chests(self, do_gold_chests=True):
+		screen = Bot.refresh_screen()
+		Bot.find_and_click_asset(self.brown_chests, tolerance=0.3, screen=screen)	
 
-	if weapon is not None and found_edge is not None:
-		click_asset(found_edge, 1, 0, -35, sleep_after_click=0.1)
-		click_asset(weapon, 1, 5, 5, sleep_after_click=0)
-		return True
-	return False
+		if do_gold_chests:
+			gold_chest_clicked = Bot.find_and_click_asset(self.gold_chests[0], tolerance=0.3, screen=screen)
 
-def do_functions(functions):
-	functions = find_and_click_asset(functions, 5, tolerance=0.1)
+			if gold_chest_clicked:
+				time.sleep(0.2)
+				if self.launch_ad(self.gold_chests[1]):
+					time.sleep(1)
+					Bot.find_and_click_asset(self.gold_chests[2])
 
-def do_collection(collections):
-	find_and_click_asset(collections, 2, tolerance=0.2)
+	def switch_screens(self):
+		if Bot.check_cooldown(self.last_screen_switch, self.screen_switch_cooldown):
+			Bot.find_and_click_asset(self.screens)
+			self.last_screen_switch = datetime.now()
 
-def find_and_click_asset(assets, click_x_times=1, xoffset=0, yoffset=0, tolerance=0, persistent=False, sleep_after_click=0.2):
-	count = 1
+	def do_weapons(self, tolerance=0):
+		screen = Bot.refresh_screen(False)
+		if Bot.check_cooldown(self.last_weapon_run, self.weapon_cooldown):
+			if self.do_edge(screen):
+				if Bot.find_and_click_asset(self.weapons, tolerance=0, screen=screen):
+					self.last_weapon_run = datetime.now()
+					return True
+		return False
 
-	if persistent:
-		count = 5
+	def do_edge(self, screen=None):
+		if self.edge_loc is None:
+			if screen is None:
+				screen = Bot.refresh_screen(False)
+			self.edge_loc = Bot.find_asset(screen, self.edge)
+		
+		return Bot.find_and_click_asset(self.edge, yoffset=-35, screen=screen)
 
-	for _ in range(0, count):
-		screen = refresh_screen()
-		asset = find_asset(screen, assets, tolerance)
-		if asset:
-			click_asset(asset, click_x_times, xoffset, yoffset, sleep_after_click)
-			time.sleep(0.1)
-			return True
-	return False
+	def do_functions(self):
+		if Bot.check_cooldown(self.last_function_run, self.functions_cooldown):
+			Bot.find_and_click_asset(self.collections, 2, tolerance=0.2)
+			Bot.find_and_click_asset(self.functions, 5, tolerance=0.1)
+			self.last_function_run = datetime.now()
 
-def find_asset(screen=None, assets=None, tolerance=0):
-	if assets is None:
-		return None
+	@staticmethod
+	def do_steps(steps, delay=1, loop=False, tolerance=0.2):
+		completed_once = False
+		clicked_step = True
+		while clicked_step:
+			for step in steps:
+				step_done = Bot.find_and_click_asset(step, tolerance=tolerance)
 
-	if screen is None:
-		screen = refresh_screen()
+				if not step_done:
+					clicked_step = False
+					continue
+				time.sleep(delay)
+			if step_done:
+				completed_once = True
+				if not loop:
+					break
+		return completed_once
 
-	if isinstance(assets, list):
-		for asset in assets:
-			found_asset = screen.find_bitmap(asset, tolerance)
+	@staticmethod
+	def find_and_click_asset(assets, click_x_times=1, xoffset=0, yoffset=0, tolerance=0, persistent=False, sleep_after_click=0.2, screen=None):
+		count = 1
+
+		if persistent:
+			count = 5
+
+		for _ in range(0, count):
+			if screen is None:
+				screen = Bot.refresh_screen()
+			asset = Bot.find_asset(screen, assets, tolerance)
+			if asset:
+				Bot.click_asset(asset, click_x_times, xoffset, yoffset, sleep_after_click)
+				time.sleep(0.1)
+				return True
+		return False
+
+	@staticmethod
+	def find_asset(screen=None, assets=None, tolerance=0):
+		if assets is None:
+			return None
+
+		if screen is None:
+			screen = Bot.refresh_screen()
+
+		if isinstance(assets, list):
+			for asset in assets:
+				found_asset = screen.find_bitmap(asset, tolerance)
+				if found_asset:
+					return found_asset
+		else:
+			found_asset = screen.find_bitmap(assets, tolerance)
 			if found_asset:
 				return found_asset
-	else:
-		found_asset = screen.find_bitmap(assets, tolerance)
-		if found_asset:
-			return found_asset
 
-	return None
+		return None
 
-def find_every_asset(screen, assets):
-	found_assets = []
+	@staticmethod
+	def find_every_asset(screen, assets):
+		found_assets = []
 
-	for asset in assets:
-		found_asset = screen.find_every_bitmap(asset)
-		if found_asset:
-			found_assets.append(found_asset)
+		for asset in assets:
+			found_asset = screen.find_every_bitmap(asset)
+			if found_asset:
+				found_assets.append(found_asset)
 
-	return found_assets
+		return found_assets
 
-def click_asset(found_asset, count=1, xoffset=0, yoffset=0, sleep_after_click=0.2):
-	autopy.mouse.move(found_asset[0]+xoffset, found_asset[1]+yoffset)
-	for _ in range(0,count):
-		autopy.mouse.click()
-		time.sleep(sleep_after_click)
+	@staticmethod
+	def click_asset(found_asset, count=1, xoffset=0, yoffset=0, sleep_after_click=0.1):
+		autopy.mouse.move(found_asset[0]+xoffset, found_asset[1]+yoffset)
+		for _ in range(0,count):
+			autopy.mouse.click()
+			time.sleep(sleep_after_click)
 
-main()
+	@staticmethod
+	def get_bitmap(file):
+		return autopy.bitmap.Bitmap.open(file)
+
+	@staticmethod
+	def refresh_screen(full=True):
+		screen = None
+		if full:
+			screen = autopy.bitmap.capture_screen(((0,0), (390,730)))
+		else:
+			screen = autopy.bitmap.capture_screen(((0,0), (390,380)))
+		return screen
+
+	@staticmethod
+	def check_cooldown(last_use, cooldown, log=False):
+		if not last_use:
+			return True
+		timer = datetime.now() - last_use
+		seconds = timer.total_seconds()
+
+		if log:
+			next_asc_minutes = round((cooldown - seconds) / 60, 2)
+			print(str(next_asc_minutes))
+			f = open("log.txt", "w")
+			f.write("Python bot for mobile game:\ncrush them all\n\nNext ascend in:\n{} minutes.".format(str(next_asc_minutes)))
+			f.close()
+
+		if seconds > cooldown:
+			return True
+		return False
+
+if __name__ == '__main__':
+	bot = Bot()
+	bot.main()
