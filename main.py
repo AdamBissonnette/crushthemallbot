@@ -1,8 +1,8 @@
 import autopy
-import louie
-import threading
+# import louie
+# import threading
 import time
-import pynput
+# import pynput
 from datetime import datetime
 
 def get_bitmap(file):
@@ -125,18 +125,25 @@ def main():
 	screen.save("screen.png")
 	# return
 
-	ascend_cooldown = (2300/17)*60
+	ascend_cooldown = (2700/17)*60
 	dungeon_cooldown = 1200
 	exped_cooldown = 600
-	weapon_cooldown = 0.7
+	weapon_cooldown = 1
 	find_and_click_asset(screens)
-	last_dungeon_run = datetime.now()
-	last_exped_run = None #datetime.now()
+	last_dungeon_run = None #datetime.now()
+	last_exped_run = datetime.now()
 	last_weapon_run = None
 	last_ascend = datetime.now()
 	iteration = 0
 	stopping = False
 	while not stopping:
+		# last_dungeon_run = do_dungeon(dungeon_cooldown,
+		# 								last_dungeon_run,
+		# 								dungeon_steps,
+		# 								decline,
+		# 								weapons,
+		# 								edge)
+		# return
 		# last_exped_run = do_expedition(exped_cooldown, last_exped_run, expedition_steps, exped_start, exped_collect)
 		# do_functions(functions)
 		# check_if_ad_is_done(5)
@@ -148,19 +155,22 @@ def main():
 			ascended = do_ascend(ascend_steps)
 			if ascended:
 				last_ascend = datetime.now()
-				ascend_cooldown = (3300/17)*60
+				ascend_cooldown = (3500/17)*60
 				time.sleep(1)
 		# return
 
 		speedad_run = do_speedad(speedad_steps)
-
-		if check_cooldown(last_dungeon_run, dungeon_cooldown):
-			if do_dungeon(dungeon_steps, decline, weapons, edge):
-				last_dungeon_run = datetime.now()
-				time.sleep(1)
-		speedad_run = do_speedad(speedad_steps)
-
-		last_exped_run = do_expedition(exped_cooldown, last_exped_run, expedition_steps, exped_start, exped_collect)
+		last_dungeon_run = do_dungeon(dungeon_cooldown,
+										last_dungeon_run,
+										dungeon_steps,
+										decline,
+										weapons,
+										edge)
+		last_exped_run = do_expedition(exped_cooldown,
+										last_exped_run,
+										expedition_steps,
+										exped_start,
+										exped_collect)
 		# return
 
 		if iteration % 15 == 0:
@@ -255,19 +265,16 @@ def is_in_main_area():
 		return True
 	return False
 
-def do_dungeon(dungeon_steps, decline, weapons, edge):
-	find_and_click_asset(dungeon_steps[0])
-	time.sleep(0.3)
-	find_and_click_asset(dungeon_steps[1], tolerance=0.2)
-	time.sleep(0.3)
-	find_and_click_asset(dungeon_steps[2])
-	time.sleep(0.3)
-	find_and_click_asset(dungeon_steps[3])
-	time.sleep(0.3)
+def do_dungeon(dungeon_cooldown, last_dungeon_run, dungeon_steps, decline, weapons, edge):
+	if check_cooldown(last_dungeon_run, dungeon_cooldown):
+		new_dungeon_runtime = datetime.now()
+
+	do_steps([dungeon_steps[0], dungeon_steps[1], dungeon_steps[2], dungeon_steps[3]], delay=0.3)
+
 	decline_found = find_and_click_asset(decline, tolerance=0.2)
 
 	if is_in_main_area():
-		return False
+		return last_dungeon_run
 
 	if not decline_found:
 		time.sleep(0.5)
@@ -275,8 +282,8 @@ def do_dungeon(dungeon_steps, decline, weapons, edge):
 		while not victory:
 			time.sleep(4)
 			victory = do_dungeon_boss(weapons, dungeon_steps[5], dungeon_steps[6])
-		return True
-	return False
+
+	return new_dungeon_runtime
 
 		# do_dungeon_boss(dunweapons, edge)
 		# autopy.key.tap(autopy.key.Code.ESCAPE)
@@ -325,7 +332,7 @@ def do_speedad(speedad_steps):
 	
 	return False
 
-def launch_ad(ad_asset, timeout=6):
+def launch_ad(ad_asset, timeout=7):
 	screen = refresh_screen()
 
 	ad_confirm = find_asset(screen, ad_asset, 0.2)
@@ -342,13 +349,37 @@ def launch_ad(ad_asset, timeout=6):
 			return False
 
 		ad_complete = False
-		while not ad_complete:
-			ad_complete = check_if_ad_is_done(10)
+		adtimeout = 60
+		adstart = datetime.now()
+		while not ad_complete :
+			if check_cooldown(adstart, adtimeout):
+				print("restarting app")
+				restart_app()
+				return False
+			ad_complete = check_if_ad_is_done(7)
 
 			if ad_complete:
 				return True
 	else:
 		return False
+
+def restart_app():
+	exit_app()
+	time.sleep(10)
+	open_app()
+	time.sleep(10)
+
+def open_app():
+	app_opened = False
+	while not app_opened:
+		app_opened = find_and_click_asset(get_bitmap("assets/crush_them_all_app.png"))
+	print ("app opened")
+
+def exit_app():
+	autopy.key.tap(autopy.key.Code.PAGE_UP)
+	time.sleep(5) #takes a while for the X to appear
+	find_and_click_asset(get_bitmap("assets/gamequit.png"))
+	
 
 def check_if_ad_is_done(timeout):
 	escape_back()
@@ -356,7 +387,11 @@ def check_if_ad_is_done(timeout):
 	time.sleep(1)
 
 	screen = refresh_screen()
-	resume_button = [get_bitmap("assets/ad_resume.png"), get_bitmap("assets/ad_resume2.png")]
+	resume_button = [
+					get_bitmap("assets/ad_resume.png"), 
+					get_bitmap("assets/ad_resume2.png"),
+					get_bitmap("assets/ad_resume3.png"),
+					]
 	resume_found = find_asset(screen, resume_button, tolerance=0.2)
 	if resume_found:
 		click_asset(resume_found, 1)
