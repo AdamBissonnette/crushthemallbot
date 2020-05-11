@@ -38,12 +38,14 @@ class Bot():
 		self.decline = Bot.get_bitmap('assets/decline.png')
 		self.cta_app = Bot.get_bitmap('assets/crush_them_all_app.png')
 
-		self.functions = [
+		self.escape_menus = [
 			self.cta_app,
 			self.decline,
 			Bot.get_bitmap('assets/okay.png'),
 			Bot.get_bitmap('assets/X.png'),
 			Bot.get_bitmap('assets/chest_gold_step3.png'),
+		]
+		self.functions = [
 			Bot.get_bitmap('assets/function_upgrade_heroes.png'),
 			Bot.get_bitmap('assets/function_upgrade_villages.png'),
 		]
@@ -108,7 +110,7 @@ class Bot():
 		louie.connect(self.stop, signal=PlayerKeyboard.kill_signal)
 
 		self.ideal_ascend_level = 3600
-		self.ascend_cooldown = (200/19)*60
+		self.ascend_cooldown = (3000/19)*60
 		self.dungeon_cooldown = 800
 		self.exped_cooldown = 600
 		self.weapon_cooldown = 1
@@ -151,7 +153,7 @@ class Bot():
 			# print ("switch screens runtime {}".format(time.perf_counter() - start))
 			# start = time.perf_counter()
 			self.do_functions()
-			# print ("functions runtime {}".format(time.perf_counter() - start))
+			# print ("routine runtime {}".format(time.perf_counter() - start))
 			# return
 
 	def do_expedition(self):
@@ -204,7 +206,7 @@ class Bot():
 		if Bot.check_cooldown(self.last_dungeon_run, self.dungeon_cooldown):
 			new_dungeon_runtime = datetime.now()
 
-			steps_done = Bot.do_steps([self.dungeon_steps[0],
+			Bot.do_steps([self.dungeon_steps[0],
 					self.dungeon_steps[1],
 					self.dungeon_steps[2],
 					self.dungeon_steps[3]], delay=0.3)
@@ -385,6 +387,7 @@ class Bot():
 		if Bot.check_cooldown(self.last_function_run, self.functions_cooldown):
 			Bot.find_and_click_asset(self.collections, 2, tolerance=0.2)
 			Bot.find_and_click_asset(self.functions, 5, tolerance=0.1)
+			Bot.find_and_click_asset(self.escape_menus, tolerance=0.2)
 			self.last_function_run = datetime.now()
 
 	@staticmethod

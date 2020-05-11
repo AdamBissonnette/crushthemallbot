@@ -1,4 +1,7 @@
 old*
 /*.png
 /log.txt
-lib/_*
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
