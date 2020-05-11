@@ -1,4 +1,4 @@
 old*
 /*.png
 /log.txt
-*__pycache__*
+lib/_*
