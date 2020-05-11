@@ -1,8 +1,9 @@
 import autopy
-# import louie
+import louie
 # import threading
 import time
 # import pynput
+from lib.player_keyboard import PlayerKeyboard
 from datetime import datetime
 
 class Bot():
@@ -96,13 +97,19 @@ class Bot():
 			Bot.get_bitmap('assets/exped_step6_confirm.png'),
 		]
 
+	def stop(self):
+		self.stopping = True
+
 	def main(self):
 		screen = Bot.refresh_screen()
 		screen.save("screen.png")
 		# return
 
-		self.ascend_cooldown = (3500/17)*60
-		self.dungeon_cooldown = 1200
+		louie.connect(self.stop, signal=PlayerKeyboard.kill_signal)
+
+		self.ideal_ascend_level = 3600
+		self.ascend_cooldown = (200/19)*60
+		self.dungeon_cooldown = 800
 		self.exped_cooldown = 600
 		self.weapon_cooldown = 1
 		self.screen_switch_cooldown = 60
@@ -219,6 +226,7 @@ class Bot():
 			self.last_dungeon_run = new_dungeon_runtime
 			Bot.find_and_click_asset(self.screens)
 			return True
+		return False
 
 			# do_dungeon_boss(dunweapons, edge)
 			# autopy.key.tap(autopy.key.Code.ESCAPE)
@@ -252,7 +260,7 @@ class Bot():
 					time.sleep(1)
 					self.escape_back(self.decline)
 					time.sleep(1)
-					self.ascend_cooldown = (3500/17)*60
+					self.ascend_cooldown = (self.ideal_ascend_level/19)*60
 					self.last_ascend = datetime.now()
 					time.sleep(1)
 					return True
@@ -300,7 +308,6 @@ class Bot():
 
 	def restart_app(self):
 		self.exit_app()
-		time.sleep(10)
 		self.open_app()
 		time.sleep(10)
 
@@ -311,9 +318,11 @@ class Bot():
 		print ("app opened")
 
 	def exit_app(self):
-		autopy.key.tap(autopy.key.Code.PAGE_UP)
-		time.sleep(5) #takes a while for the X to appear
-		Bot.find_and_click_asset(Bot.get_bitmap("assets/gamequit.png"))
+		while not self.is_out_of_app():
+			autopy.key.tap(autopy.key.Code.PAGE_UP)
+			time.sleep(5) #takes a while for the X to appear
+			Bot.find_and_click_asset(Bot.get_bitmap("assets/gamequit.png"), tolerance=0.2)
+			time.sleep(10)
 		
 	def check_if_ad_is_done(self, timeout):
 		resume_button = [
@@ -338,7 +347,7 @@ class Bot():
 			# 	return False
 
 	def do_chests(self, do_gold_chests=True):
-		screen = Bot.refresh_screen()
+		screen = Bot.refresh_screen(False)
 		Bot.find_and_click_asset(self.brown_chests, tolerance=0.3, screen=screen)	
 
 		if do_gold_chests:
@@ -483,5 +492,7 @@ class Bot():
 		return False
 
 if __name__ == '__main__':
+	P = PlayerKeyboard()
+	P.start()
 	bot = Bot()
 	bot.main()

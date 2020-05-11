@@ -1,6 +1,7 @@
 import louie
 from pynput import keyboard
 from lib.thread import Thread
+import atexit
 
 class PlayerKeyboard(Thread):
 
