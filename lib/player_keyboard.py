@@ -6,22 +6,24 @@ import atexit
 class PlayerKeyboard(Thread):
 
 	keyboard = None
-	def __init__(self):
+	bot = None
+	def __init__(self, bot):
 		super().__init__()
 		self.timeout = 0.2
+		self.stopping = False
+		self.bot = bot
 	
 	def on_press(self, key):
-		if key == keyboard.Key.shift_l:
-			self.stopping = True
-			louie.send(signal=PlayerKeyboard.kill_signal)
-			return False
+		pass
 
 	def on_release(self, key):
 		if key == keyboard.Key.shift_l:
+			self.stopping = True
+			self.bot.stop()
 			return False
 
 	def do_action(self):
-		listener = keyboard.Listener(
+		with keyboard.Listener(
 			on_press=self.on_press,
-			on_release=self.on_release)
-		listener.start()
+			on_release=self.on_release) as listener:
+			listener.join()

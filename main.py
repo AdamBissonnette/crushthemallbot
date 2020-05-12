@@ -1,10 +1,13 @@
 import autopy
-import louie
+# import louie
+import random
 # import threading
 import time
 # import pynput
 from lib.player_keyboard import PlayerKeyboard
 from datetime import datetime
+from PIL import Image, ImageEnhance, ImageFilter
+import pytesseract
 
 class Bot():
 
@@ -30,9 +33,9 @@ class Bot():
 		self.weapons = [
 			Bot.get_bitmap('assets/weapon_swords.png'),
 			Bot.get_bitmap('assets/weapon_daggers.png'),
+			Bot.get_bitmap('assets/weapon_fire.png'),
+			Bot.get_bitmap('assets/weapon_light.png'),
 			Bot.get_bitmap('assets/weapon_blobs.png'),
-			Bot.get_bitmap('assets/weapon_fireball.png'),
-			Bot.get_bitmap('assets/weapon_katana.png'),
 		]
 
 		self.decline = Bot.get_bitmap('assets/decline.png')
@@ -42,6 +45,7 @@ class Bot():
 			self.cta_app,
 			self.decline,
 			Bot.get_bitmap('assets/okay.png'),
+			Bot.get_bitmap('assets/away_okay.png'),
 			Bot.get_bitmap('assets/X.png'),
 			Bot.get_bitmap('assets/chest_gold_step3.png'),
 		]
@@ -54,6 +58,12 @@ class Bot():
 		]
 		self.edge = [Bot.get_bitmap('assets/edge.png')]
 		self.edge_loc = None
+
+		self.new_stage = [
+			Bot.get_bitmap('assets/new_stage.png'), 
+			Bot.get_bitmap('assets/new_stage2.png'), 
+			Bot.get_bitmap('assets/new_stage3.png'), 
+		]
 
 		self.speedad_steps = [
 			Bot.get_bitmap('assets/speedad_step1.png'),
@@ -71,8 +81,10 @@ class Bot():
 		self.dungeon_steps = [
 			Bot.get_bitmap('assets/screen_battle.png'),
 			Bot.get_bitmap('assets/dungeon_step1.png'),
-			Bot.get_bitmap('assets/dungeon_step2.png'),
-			Bot.get_bitmap('assets/dungeon_step3.png'),
+			# Bot.get_bitmap('assets/dungeon_step2.png'),
+			[Bot.get_bitmap('assets/dungeon_step2_alt2.png'),
+				Bot.get_bitmap('assets/dungeon_step2_alt.png')], #top or mid dungeon
+			Bot.get_bitmap('assets/dungeon_step3.png'), #highest rank dungeon
 			Bot.get_bitmap('assets/decline.png'),
 			Bot.get_bitmap('assets/dungeon_edge.png'),
 			Bot.get_bitmap('assets/dungeon_okay.png'),
@@ -102,25 +114,53 @@ class Bot():
 	def stop(self):
 		self.stopping = True
 
+	@staticmethod
+	def get_stage_number():
+		screen = Bot.refresh_screen(4)
+		screen.save("stage.png")
+
+		pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+		im = Image.open('stage.png')
+
+		im = im.convert("RGBA")
+		newimdata = []
+		datas = im.getdata()
+
+		for item in datas:
+			if item[0] > 212 or item[1] > 212 or item[2] > 212:
+				newimdata.append((0,0,0))
+			else:
+				newimdata.append((255, 255, 255))
+		im.putdata(newimdata)
+
+		# im = im.filter(ImageFilter.MedianFilter(1))
+		enhancer = ImageEnhance.Contrast(im)
+		im = enhancer.enhance(2)
+		im = im.convert('1')
+		
+		text = pytesseract.image_to_string(im,config='-c tessedit_char_whitelist=0123456789 --psm 6', lang='eng')
+
+		return text
+
 	def main(self):
 		screen = Bot.refresh_screen()
 		screen.save("screen.png")
 		# return
 
-		louie.connect(self.stop, signal=PlayerKeyboard.kill_signal)
-
-		self.ideal_ascend_level = 3600
-		self.ascend_cooldown = (3000/19)*60
+		self.last_stage_check = None
+		self.stage_reports = []
+		self.target_stage = 3650
+		self.ascend_cooldown = 60
 		self.dungeon_cooldown = 800
 		self.exped_cooldown = 600
-		self.weapon_cooldown = 1
-		self.screen_switch_cooldown = 60
-		self.functions_cooldown = 20
+		self.weapon_cooldown = 0.5
+		self.screen_switch_cooldown = 120
+		self.functions_cooldown = 60
 		
-		self.last_dungeon_run = None #datetime.now()
-		self.last_exped_run = None #datetime.now()
+		self.last_dungeon_run = datetime.now()
+		self.last_exped_run = datetime.now()
 		self.last_weapon_run = None
-		self.last_ascend = datetime.now()
+		self.last_ascend_check = None #datetime.now()
 		self.last_screen_switch = None #datetime.now()
 		self.last_function_run = None #datetime.now()
 		self.stopping = False
@@ -128,41 +168,39 @@ class Bot():
 		self.switch_screens()
 
 		while not self.stopping:
+			# self.do_functions()
+			# return
 			# start = time.perf_counter()
+			Bot.find_and_click_asset(self.escape_menus, tolerance=0.2)
 			self.do_ascend()
 			self.do_speedad()
 			self.do_dungeon()
 			self.do_expedition()
-			# print ("standard functions runtime {}".format(time.perf_counter() - start))
+			if self.stopping:
+				continue
 
-			# start = time.perf_counter()
 			self.do_chests()
-			# print ("chest 1 runtime {}".format(time.perf_counter() - start))
-			# start = time.perf_counter()
 			self.do_edge()
-			# print ("edge runtime {}".format(time.perf_counter() - start))
-			# start = time.perf_counter()
-			self.do_chests()
-			# print ("chest 2 runtime {}".format(time.perf_counter() - start))
-			# start = time.perf_counter()
-			self.do_weapons()
-			# print ("weapons runtime {}".format(time.perf_counter() - start))
+			if self.stopping:
+				continue
+
+			weapons_done = self.do_weapons()
+
+			if self.stopping:
+				continue
 			
-			# start = time.perf_counter()
 			self.switch_screens()
-			# print ("switch screens runtime {}".format(time.perf_counter() - start))
-			# start = time.perf_counter()
-			self.do_functions()
-			# print ("routine runtime {}".format(time.perf_counter() - start))
-			# return
+			if not self.do_functions(weapons_done):
+				time.sleep(0.5)
+
 
 	def do_expedition(self):
 		reward_ready = Bot.find_asset(self.expedition_steps[0], tolerance=0.2)
 
 		if reward_ready or Bot.check_cooldown(self.last_exped_run, self.exped_cooldown):
 			in_exped = Bot.do_steps([self.expedition_steps[1], self.expedition_steps[2]])
-			Bot.do_steps(self.exped_collect, loop=True, tolerance=0.3)
-			Bot.do_steps(self.exped_start, loop=True, tolerance=0.3)
+			Bot.do_steps(self.exped_collect, loop=True, tolerance=0.3, delay=0.5)
+			Bot.do_steps(self.exped_start, loop=True, tolerance=0.3, delay=0.5)
 
 			if in_exped:
 				self.escape_back(self.decline, 2)
@@ -206,10 +244,8 @@ class Bot():
 		if Bot.check_cooldown(self.last_dungeon_run, self.dungeon_cooldown):
 			new_dungeon_runtime = datetime.now()
 
-			Bot.do_steps([self.dungeon_steps[0],
-					self.dungeon_steps[1],
-					self.dungeon_steps[2],
-					self.dungeon_steps[3]], delay=0.3)
+			Bot.do_steps([self.dungeon_steps[0], self.dungeon_steps[1], self.dungeon_steps[2],
+						 self.dungeon_steps[3]], tolerance=0.2, delay=0.5)
 
 			decline_found = Bot.find_and_click_asset(self.decline, tolerance=0.2)
 
@@ -250,23 +286,55 @@ class Bot():
 			return False
 		return True
 
+	def do_math_for_nerds(self):
+		stage_number = int(Bot.get_stage_number())
+		stage_difference = 0
+		staging_average = 0
+
+		if self.last_stage_check is not None:
+			stage_difference = stage_number - self.last_stage_check
+			self.stage_reports.append(stage_difference)
+			staging_average = round(sum(self.stage_reports) / len(self.stage_reports), 2)
+		self.last_stage_check = stage_number
+
+		percent_complete = str(round(stage_number / self.target_stage, 3) * 100)
+
+
+		f = open("log.txt", "w")
+		ln = ("Percent complete: {}/{} : {}%".format(str(stage_number),
+						str(self.target_stage), percent_complete))
+		ln2 = ("{} stages since last check, {} avg speed".format(str(stage_difference),
+					str(staging_average)))
+		f.write("Python bot for mobile game:\ncrush them all\n{}\n{}\n".format(ln, ln2))
+		f.close()
+
+		print(ln, ln2)
+
+		return stage_number
+
 	def do_ascend(self):
-		if Bot.check_cooldown(self.last_ascend, self.ascend_cooldown, log=True):
-			if Bot.find_and_click_asset(self.ascend_steps[0], 3, tolerance=0.2, persistent=True):
-				if Bot.find_and_click_asset(self.ascend_steps[1]):
-					Bot.find_and_click_asset(self.ascend_steps[2])
-					time.sleep(5)
-					self.escape_back(self.decline)
-					time.sleep(1)
-					self.escape_back(self.decline)
-					time.sleep(1)
-					self.escape_back(self.decline)
-					time.sleep(1)
-					self.ascend_cooldown = (self.ideal_ascend_level/19)*60
-					self.last_ascend = datetime.now()
-					time.sleep(1)
-					return True
-		return False
+		ascended = False
+		if Bot.check_cooldown(self.last_ascend_check, self.ascend_cooldown, log=True):	
+			try:
+				self.last_ascend_check = datetime.now()
+				stage_number = self.do_math_for_nerds()
+
+				if stage_number >= self.target_stage:
+					if Bot.find_and_click_asset(self.ascend_steps[0], 3, tolerance=0.2, persistent=True):
+						if Bot.find_and_click_asset(self.ascend_steps[1]):
+							Bot.find_and_click_asset(self.ascend_steps[2])
+							time.sleep(5)
+							self.escape_back(self.decline)
+							time.sleep(1)
+							self.escape_back(self.decline)
+							time.sleep(1)
+							self.escape_back(self.decline)
+							time.sleep(1)
+							time.sleep(1)
+							ascended = True
+			except Exception as e:
+				print(e)
+		return ascended
 
 	def do_speedad(self):
 		speedad_ready = Bot.find_and_click_asset(self.speedad_steps[0], tolerance=0.2)
@@ -280,7 +348,7 @@ class Bot():
 		return False
 
 	def launch_ad(self, ad_asset, timeout=7):
-		ad_confirm = Bot.find_and_click_asset(ad_asset, tolerance=0.2)
+		ad_confirm = Bot.find_and_click_asset(ad_asset, tolerance=0.2, persistent=True)
 		if ad_confirm:
 			time.sleep(timeout)
 
@@ -348,12 +416,13 @@ class Bot():
 			# else:
 			# 	return False
 
-	def do_chests(self, do_gold_chests=True):
-		screen = Bot.refresh_screen(False)
-		Bot.find_and_click_asset(self.brown_chests, tolerance=0.3, screen=screen)	
+	def do_chests(self, screen=None, do_gold_chests=True):
+		if screen is None:
+			screen = Bot.refresh_screen(3)
+		found_chest = Bot.find_and_click_asset(self.brown_chests, tolerance=0.3, screen=screen, yoffset=125)
 
-		if do_gold_chests:
-			gold_chest_clicked = Bot.find_and_click_asset(self.gold_chests[0], tolerance=0.3, screen=screen)
+		if not found_chest and do_gold_chests:
+			gold_chest_clicked = Bot.find_and_click_asset(self.gold_chests[0], tolerance=0.3, screen=screen, yoffset=125)
 
 			if gold_chest_clicked:
 				time.sleep(0.2)
@@ -365,33 +434,42 @@ class Bot():
 		if Bot.check_cooldown(self.last_screen_switch, self.screen_switch_cooldown):
 			Bot.find_and_click_asset(self.screens)
 			self.last_screen_switch = datetime.now()
-
-	def do_weapons(self, tolerance=0):
-		screen = Bot.refresh_screen(False)
-		if Bot.check_cooldown(self.last_weapon_run, self.weapon_cooldown):
-			if self.do_edge(screen):
-				if Bot.find_and_click_asset(self.weapons, tolerance=0, screen=screen):
-					self.last_weapon_run = datetime.now()
-					return True
+			return True
 		return False
 
+	def do_weapons(self, tolerance=0):
+		screen = Bot.refresh_screen(3)
+		self.do_chests(screen)
+		used_weapon = False
+		if Bot.check_cooldown(self.last_weapon_run, self.weapon_cooldown):
+			if self.do_edge(screen):
+				# screen = Bot.refresh_screen(3)
+				if Bot.find_and_click_asset(self.weapons, tolerance=0, screen=screen, yoffset=125):
+					self.last_weapon_run = datetime.now()
+					used_weapon = True
+				# self.do_chests(screen)
+		return used_weapon
+
 	def do_edge(self, screen=None):
+		if screen is None:
+			screen = Bot.refresh_screen(3)
+
 		if self.edge_loc is None:
-			if screen is None:
-				screen = Bot.refresh_screen(False)
 			self.edge_loc = Bot.find_asset(screen, self.edge)
 		
-		return Bot.find_and_click_asset(self.edge, yoffset=-35, screen=screen)
+		return Bot.find_and_click_asset(self.edge, yoffset=95, screen=screen)
 
-	def do_functions(self):
-		if Bot.check_cooldown(self.last_function_run, self.functions_cooldown):
-			Bot.find_and_click_asset(self.collections, 2, tolerance=0.2)
+	def do_functions(self, other_functions_done=False):
+		if not other_functions_done or Bot.check_cooldown(self.last_function_run, self.functions_cooldown):
+			Bot.find_and_click_asset(self.collections, tolerance=0.2)
 			Bot.find_and_click_asset(self.functions, 5, tolerance=0.1)
-			Bot.find_and_click_asset(self.escape_menus, tolerance=0.2)
+			self.do_chests()
 			self.last_function_run = datetime.now()
+			return True
+		return False
 
 	@staticmethod
-	def do_steps(steps, delay=1, loop=False, tolerance=0.2):
+	def do_steps(steps, delay=0.5, loop=False, tolerance=0.2):
 		completed_once = False
 		clicked_step = True
 		while clicked_step:
@@ -410,20 +488,30 @@ class Bot():
 
 	@staticmethod
 	def find_and_click_asset(assets, click_x_times=1, xoffset=0, yoffset=0, tolerance=0, persistent=False, sleep_after_click=0.2, screen=None):
-		count = 1
 
-		if persistent:
-			count = 5
-
-		for _ in range(0, count):
+		clicked = False
+		click_attempted = False
+		while not clicked:
 			if screen is None:
 				screen = Bot.refresh_screen()
 			asset = Bot.find_asset(screen, assets, tolerance)
 			if asset:
 				Bot.click_asset(asset, click_x_times, xoffset, yoffset, sleep_after_click)
 				time.sleep(0.1)
-				return True
-		return False
+				click_attempted = True
+			else:
+				if click_attempted:
+					clicked = True
+				else:
+					clicked = False
+					break
+			screen = None
+			if not persistent:
+				clicked = True
+			else:
+				time.sleep(0.5)
+
+		return clicked
 
 	@staticmethod
 	def find_asset(screen=None, assets=None, tolerance=0):
@@ -446,13 +534,22 @@ class Bot():
 		return None
 
 	@staticmethod
-	def find_every_asset(screen, assets):
+	def find_every_asset(assets, screen=None):
 		found_assets = []
 
-		for asset in assets:
-			found_asset = screen.find_every_bitmap(asset)
-			if found_asset:
-				found_assets.append(found_asset)
+		if assets is None:
+			return []
+
+		if screen is None:
+			screen = Bot.refresh_screen()
+
+		if isinstance(assets, list):
+			for asset in assets:
+				found_asset = screen.find_every_bitmap(asset)
+				if found_asset:
+					found_assets.append(found_asset)
+		else:
+			found_assets = screen.find_every_bitmap(assets)
 
 		return found_assets
 
@@ -468,12 +565,17 @@ class Bot():
 		return autopy.bitmap.Bitmap.open(file)
 
 	@staticmethod
-	def refresh_screen(full=True):
+	def refresh_screen(size=1):
 		screen = None
-		if full:
+		if size == 1:
 			screen = autopy.bitmap.capture_screen(((0,0), (390,730)))
+		elif size == 2:
+			screen = autopy.bitmap.capture_screen(((0,0), (390,350)))
+			screen = autopy.bitmap.capture_screen(((0,0), (390,730)))
+		elif size == 3:
+			screen = autopy.bitmap.capture_screen(((0,125), (390,225)))
 		else:
-			screen = autopy.bitmap.capture_screen(((0,0), (390,380)))
+			screen = autopy.bitmap.capture_screen(((203,30), (40,30)))
 		return screen
 
 	@staticmethod
@@ -483,19 +585,16 @@ class Bot():
 		timer = datetime.now() - last_use
 		seconds = timer.total_seconds()
 
-		if log:
-			next_asc_minutes = round((cooldown - seconds) / 60, 2)
-			print(str(next_asc_minutes))
-			f = open("log.txt", "w")
-			f.write("Python bot for mobile game:\ncrush them all\n\nNext ascend in:\n{} minutes.".format(str(next_asc_minutes)))
-			f.close()
+		# if log:
+		# 	next_asc_minutes = round((cooldown - seconds) / 60, 2)
+		# 	print(str(next_asc_minutes))
 
 		if seconds > cooldown:
 			return True
 		return False
 
 if __name__ == '__main__':
-	P = PlayerKeyboard()
-	P.start()
 	bot = Bot()
+	P = PlayerKeyboard(bot)
+	P.start()
 	bot.main()
