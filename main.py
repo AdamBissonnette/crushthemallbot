@@ -287,7 +287,7 @@ class Bot():
 		return True
 
 	def do_math_for_nerds(self):
-		stage_number = int(Bot.get_stage_number())
+		stage_number = float(Bot.get_stage_number())
 		stage_difference = 0
 		staging_average = 0
 
@@ -297,8 +297,7 @@ class Bot():
 			staging_average = round(sum(self.stage_reports) / len(self.stage_reports), 2)
 		self.last_stage_check = stage_number
 
-		percent_complete = str(round(stage_number / self.target_stage, 3) * 100)
-
+		percent_complete = str(round((stage_number / self.target_stage) * 100, 3))
 
 		f = open("log.txt", "w")
 		ln = ("Percent complete: {}/{} : {}%".format(str(stage_number),
@@ -329,8 +328,10 @@ class Bot():
 							self.escape_back(self.decline)
 							time.sleep(1)
 							self.escape_back(self.decline)
-							time.sleep(1)
-							time.sleep(1)
+							time.sleep(5)
+							self.switch_screens()
+							self.last_stage_check = None
+							self.stage_reports = []
 							ascended = True
 			except Exception as e:
 				print(e)
