@@ -154,7 +154,7 @@ class Bot():
 
 		self.gift_collect = [
 			Bot.get_bitmap('assets/mail_step5.png'), 
-			Bot.get_bitmap('assets/mail_step3.png'), #select al
+			Bot.get_bitmap('assets/mail_step3.png'), #select all
 			Bot.get_bitmap('assets/mail_step7.png'),
 		]
 
@@ -196,6 +196,7 @@ class Bot():
 			# return
 			# start = time.perf_counter()
 			Bot.find_and_click_asset(self.escape_menus, tolerance=0.2)
+			self.check_for_sign_out()
 			self.do_ascend()
 			self.do_speedad()
 			self.do_dungeon()

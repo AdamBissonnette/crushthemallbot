@@ -36,6 +36,6 @@ Nox window needs to be in the top lefthand corner of the screen - check the scre
 * installation script so it's not a pain to setup
 * scroll up / down (required for leveling shop without upgrade all)
 * upgrade all heroes / shops manually
+* overhaul the entire system to use a json+assets config (maybe remote?) instead of code + hotkey to refresh config so the bot can be edited while running AND be used for other games
 * guild boss battles
 * guild wars? arena? blitz? (these are the fun parts so maybe don't want to automate)
-* overhaul the entire system to use a json+assets config (maybe remote?) instead of code + hotkey to refresh config so the bot can be edited while running AND be used for other games
