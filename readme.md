@@ -27,15 +27,15 @@ Nox window needs to be in the top lefthand corner of the screen - check the scre
 * Crash detection / app restart
 * Closes popup windows (most of the time)
 * Image to text recognition to ascend at a given stage #
+* smart logout (if you login via your phone the app will logout for 15 minutes then start again)
+* powershell script to resize and position the Nox window (run in powershell using `. ./Position-Nox.ps1`)
 
 ## Planned features
 
 * mail checking / collection
-* smart logout (if you login via your phone the app will logout for 20-30 minutes then start again)
-* script to resize and position the Nox window
 * installation script so it's not a pain to setup
 * scroll up / down (required for leveling shop without upgrade all)
 * upgrade all heroes / shops manually
 * guild boss battles
 * guild wars? arena? blitz? (these are the fun parts so maybe don't want to automate)
-* overhaul the entire system to use a json+assets config (maybe remote?) instead of code - hotkey to refresh config so the bot can be edited while running AND be used for other games
+* overhaul the entire system to use a json+assets config (maybe remote?) instead of code + hotkey to refresh config so the bot can be edited while running AND be used for other games

@@ -42,6 +42,7 @@ class Bot():
 		self.okay = Bot.get_bitmap('assets/okay.png')
 		self.cta_app = Bot.get_bitmap('assets/crush_them_all_app.png')
 		self.os_error = Bot.get_bitmap('assets/crash_game_stopped.png')
+		self.signed_out = Bot.get_bitmap('assets/app_signed_out.png')
 
 		self.escape_menus = [
 			self.cta_app,
@@ -86,7 +87,7 @@ class Bot():
 			Bot.get_bitmap('assets/screen_battle.png'),
 			Bot.get_bitmap('assets/dungeon_step1.png'),
 			# Bot.get_bitmap('assets/dungeon_step2.png'),
-			[Bot.get_bitmap('assets/dungeon_step2_alt2.png'),
+			[Bot.get_bitmap('assets/dungeon_step2.png'),
 				Bot.get_bitmap('assets/dungeon_step2_alt.png')], #top or mid dungeon
 			Bot.get_bitmap('assets/dungeon_step3.png'), #highest rank dungeon
 			Bot.get_bitmap('assets/decline.png'),
@@ -160,42 +161,15 @@ class Bot():
 	def stop(self):
 		self.stopping = True
 
-	@staticmethod
-	def get_stage_number():
-		screen = Bot.refresh_screen(4)
-		screen.save("stage.png")
-
-		pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-		im = Image.open('stage.png')
-
-		im = im.convert("RGBA")
-		newimdata = []
-		datas = im.getdata()
-
-		for item in datas:
-			if item[0] > 212 or item[1] > 212 or item[2] > 212:
-				newimdata.append((0,0,0))
-			else:
-				newimdata.append((255, 255, 255))
-		im.putdata(newimdata)
-
-		# im = im.filter(ImageFilter.MedianFilter(1))
-		enhancer = ImageEnhance.Contrast(im)
-		im = enhancer.enhance(2)
-		im = im.convert('1')
-		
-		text = pytesseract.image_to_string(im,config='-c tessedit_char_whitelist=0123456789 --psm 6', lang='eng')
-
-		return text
-
 	def main(self):
 		screen = Bot.refresh_screen()
 		screen.save("screen.png")
+		# self.check_for_sign_out()
 		# return
 
 		self.last_stage_check = None
 		self.stage_reports = []
-		self.target_stage = 3750
+		self.target_stage = 3775
 		self.ascend_cooldown = 60
 		self.dungeon_cooldown = 800
 		self.exped_cooldown = 600
@@ -203,14 +177,16 @@ class Bot():
 		self.screen_switch_cooldown = 120
 		self.functions_cooldown = 30
 		self.guild_medal_cooldown = 900
+		self.signed_out_check_cooldown = 60
 
 		self.last_guild_medal_run = None #datetime.now()
-		self.last_dungeon_run = datetime.now()
-		self.last_exped_run = datetime.now()
+		self.last_dungeon_run = None #datetime.now()
+		self.last_exped_run = None #datetime.now()
 		self.last_weapon_run = None
 		self.last_ascend_check = None #datetime.now()
 		self.last_screen_switch = None #datetime.now()
 		self.last_function_run = None #datetime.now()
+		self.last_signed_out_check = None
 		self.stopping = False
 		
 		self.switch_screens()
@@ -243,6 +219,15 @@ class Bot():
 			if not self.do_functions(weapons_done):
 				time.sleep(0.5)
 
+	def check_for_sign_out(self):
+		if Bot.check_cooldown(self.last_signed_out_check, self.signed_out_check_cooldown):
+			signed_out = Bot.find_asset(None, self.signed_out, tolerance=0.2)
+			if signed_out:
+				print("signed out of app - restarting")
+				#wait 15 minutes before re-opening the app
+				self.restart_app(900)
+				self.last_signed_out_check = datetime.now()
+
 	def do_mail(self):
 		Bot.do_steps(
 			self.mail,
@@ -259,7 +244,7 @@ class Bot():
 		Bot.do_steps(
 			self.gift_collect,
 			delay=2,
-			tolerance=0
+			tolerance=0.2
 		)
 
 		self.escape_back(self.decline, 2)
@@ -280,7 +265,7 @@ class Bot():
 			self.last_guild_medal_run = datetime.now()
 
 	def do_expedition(self):
-		reward_ready = Bot.find_asset(self.expedition_steps[0], tolerance=0.2)
+		reward_ready = Bot.find_asset(None, self.expedition_steps[0], tolerance=0.2)
 
 		if reward_ready or Bot.check_cooldown(self.last_exped_run, self.exped_cooldown):
 			in_exped = Bot.do_steps([self.expedition_steps[1], self.expedition_steps[2]])
@@ -359,7 +344,6 @@ class Bot():
 		# while not reward_accepted:
 		# 	time.sleep(3)
 		# 	reward_accepted = find_and_click_asset(dungeon_steps[4])
-
 
 	def do_dungeon_boss(self):
 		# weapons, dungeon_steps[5], dungeon_steps[6]
@@ -462,8 +446,9 @@ class Bot():
 		else:
 			return False
 
-	def restart_app(self):
+	def restart_app(self, delay=0.2):
 		self.exit_app()
+		time.sleep(delay)
 		self.open_app()
 		time.sleep(10)
 
@@ -574,6 +559,34 @@ class Bot():
 			self.last_function_run = datetime.now()
 			return True
 		return False
+
+	@staticmethod
+	def get_stage_number():
+		screen = Bot.refresh_screen(4)
+		screen.save("stage.png")
+
+		pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+		im = Image.open('stage.png')
+
+		im = im.convert("RGBA")
+		newimdata = []
+		datas = im.getdata()
+
+		for item in datas:
+			if item[0] > 212 or item[1] > 212 or item[2] > 212:
+				newimdata.append((0,0,0))
+			else:
+				newimdata.append((255, 255, 255))
+		im.putdata(newimdata)
+
+		# im = im.filter(ImageFilter.MedianFilter(1))
+		enhancer = ImageEnhance.Contrast(im)
+		im = enhancer.enhance(2)
+		im = im.convert('1')
+		
+		text = pytesseract.image_to_string(im,config='-c tessedit_char_whitelist=0123456789 --psm 6', lang='eng')
+
+		return text
 
 	@staticmethod
 	def do_steps(steps, delay=0.5, loop=False, tolerance=0.2):
