@@ -189,7 +189,7 @@ class Bot():
 		return text
 
 	def main(self):
-		screen = Bot.refresh_screen(4)
+		screen = Bot.refresh_screen()
 		screen.save("screen.png")
 		# return
 
