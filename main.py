@@ -35,19 +35,23 @@ class Bot():
 			Bot.get_bitmap('assets/weapon_daggers.png'),
 			Bot.get_bitmap('assets/weapon_fire.png'),
 			Bot.get_bitmap('assets/weapon_light.png'),
-			Bot.get_bitmap('assets/weapon_blobs.png'),
+			Bot.get_bitmap('assets/weapon_dark.png'),
 		]
 
 		self.decline = Bot.get_bitmap('assets/decline.png')
+		self.okay = Bot.get_bitmap('assets/okay.png')
 		self.cta_app = Bot.get_bitmap('assets/crush_them_all_app.png')
+		self.os_error = Bot.get_bitmap('assets/crash_game_stopped.png')
 
 		self.escape_menus = [
 			self.cta_app,
 			self.decline,
-			Bot.get_bitmap('assets/okay.png'),
+			self.okay,
 			Bot.get_bitmap('assets/away_okay.png'),
 			Bot.get_bitmap('assets/X.png'),
 			Bot.get_bitmap('assets/chest_gold_step3.png'),
+			Bot.get_bitmap('assets/screen_saver.png'),
+			self.os_error
 		]
 		self.functions = [
 			Bot.get_bitmap('assets/function_upgrade_heroes.png'),
@@ -111,6 +115,48 @@ class Bot():
 			Bot.get_bitmap('assets/exped_step6_confirm.png'),
 		]
 
+		self.guild_chat = [
+			Bot.get_bitmap('assets/screen_guild.png'),
+			Bot.get_bitmap('assets/guild_chat.png'),
+		]
+
+		self.guild_medals_collect = [
+			Bot.get_bitmap('assets/guild_medals_collect.png')
+		]
+
+		self.guild_medals_help = [
+			Bot.get_bitmap('assets/guild_medals_help.png')
+		]
+
+		self.guild_medals_request = [
+			Bot.get_bitmap('assets/guild_medal_request.png'),
+			Bot.get_bitmap('assets/guild_medal.png'),
+			Bot.get_bitmap('assets/guild_medal_request3.png'),
+		]
+
+		self.guild_dungeon = [
+			#dungeon
+			#click banner
+			#attack once? twice?
+		]
+
+		self.mail = [
+			Bot.get_bitmap('assets/mail_step1.png'),
+			Bot.get_bitmap('assets/mail_step2.png'),
+			Bot.get_bitmap('assets/mail_mailbox.png'),
+		]
+
+		self.mail_collect = [
+			Bot.get_bitmap('assets/mail_step3.png'),
+			Bot.get_bitmap('assets/mail_step4.png'), #select all
+		]
+
+		self.gift_collect = [
+			Bot.get_bitmap('assets/mail_step5.png'), 
+			Bot.get_bitmap('assets/mail_step3.png'), #select al
+			Bot.get_bitmap('assets/mail_step7.png'),
+		]
+
 	def stop(self):
 		self.stopping = True
 
@@ -143,20 +189,22 @@ class Bot():
 		return text
 
 	def main(self):
-		screen = Bot.refresh_screen()
+		screen = Bot.refresh_screen(4)
 		screen.save("screen.png")
 		# return
 
 		self.last_stage_check = None
 		self.stage_reports = []
-		self.target_stage = 3650
+		self.target_stage = 3750
 		self.ascend_cooldown = 60
 		self.dungeon_cooldown = 800
 		self.exped_cooldown = 600
 		self.weapon_cooldown = 0.5
 		self.screen_switch_cooldown = 120
-		self.functions_cooldown = 60
-		
+		self.functions_cooldown = 30
+		self.guild_medal_cooldown = 900
+
+		self.last_guild_medal_run = None #datetime.now()
 		self.last_dungeon_run = datetime.now()
 		self.last_exped_run = datetime.now()
 		self.last_weapon_run = None
@@ -168,7 +216,7 @@ class Bot():
 		self.switch_screens()
 
 		while not self.stopping:
-			# self.do_functions()
+			# self.do_mail()
 			# return
 			# start = time.perf_counter()
 			Bot.find_and_click_asset(self.escape_menus, tolerance=0.2)
@@ -176,6 +224,8 @@ class Bot():
 			self.do_speedad()
 			self.do_dungeon()
 			self.do_expedition()
+			self.do_guild_medals()
+
 			if self.stopping:
 				continue
 
@@ -193,6 +243,41 @@ class Bot():
 			if not self.do_functions(weapons_done):
 				time.sleep(0.5)
 
+	def do_mail(self):
+		Bot.do_steps(
+			self.mail,
+			delay=1,
+			tolerance=0
+		)
+
+		Bot.do_steps(
+			self.mail_collect,
+			delay=2,
+			tolerance=0
+		)
+
+		Bot.do_steps(
+			self.gift_collect,
+			delay=2,
+			tolerance=0
+		)
+
+		self.escape_back(self.decline, 2)
+		self.last_mail_run = datetime.now()
+
+	def do_guild_medals(self):
+		#goto guild chat
+		if Bot.check_cooldown(self.last_guild_medal_run, self.guild_medal_cooldown):
+			Bot.do_steps(self.guild_chat)
+			
+			Bot.do_steps(self.guild_medals_collect)
+
+			Bot.do_steps(self.guild_medals_help, loop=True, tolerance=0.3, delay=1)
+
+			Bot.do_steps(self.guild_medals_request)
+
+			self.escape_back(self.decline, 2)
+			self.last_guild_medal_run = datetime.now()
 
 	def do_expedition(self):
 		reward_ready = Bot.find_asset(self.expedition_steps[0], tolerance=0.2)
@@ -213,7 +298,7 @@ class Bot():
 	def escape_back(self, back_asset=None, times=1):
 		for _ in range(0, times):
 			autopy.key.tap(autopy.key.Code.ESCAPE)
-			time.sleep(1)
+			time.sleep(0.5)
 
 			if Bot.find_and_click_asset(back_asset, tolerance=0.2):
 				return True
@@ -363,7 +448,7 @@ class Bot():
 				return False
 
 			ad_complete = False
-			adtimeout = 60
+			adtimeout = 90
 			adstart = datetime.now()
 			while not ad_complete :
 				if Bot.check_cooldown(adstart, adtimeout):
@@ -384,12 +469,27 @@ class Bot():
 
 	def open_app(self):
 		app_opened = False
-		while not app_opened:
-			app_opened = Bot.find_and_click_asset(self.cta_app)
+		while not app_opened and not self.is_in_main_area():
+			print("tryin ta open app")
+			app_opened = Bot.find_and_click_asset(self.cta_app, tolerance=0.2)
+			time.sleep(1)
+
+		menus_showing = True
+		is_in_main_area = False
+		while menus_showing or not is_in_main_area:
+			print("looking to clear menus")
+			is_in_main_area = self.is_in_main_area()
+			time.sleep(2)
+			menus_showing = Bot.find_and_click_asset(self.escape_menus, tolerance=0.2)
+			time.sleep(1)
+		
 		print ("app opened")
 
 	def exit_app(self):
 		while not self.is_out_of_app():
+			print("tryin ta leave app")
+			Bot.find_and_click_asset(self.os_error, tolerance=0.2)
+			time.sleep(2)
 			autopy.key.tap(autopy.key.Code.PAGE_UP)
 			time.sleep(5) #takes a while for the X to appear
 			Bot.find_and_click_asset(Bot.get_bitmap("assets/gamequit.png"), tolerance=0.2)
@@ -431,8 +531,8 @@ class Bot():
 					time.sleep(1)
 					Bot.find_and_click_asset(self.gold_chests[2])
 
-	def switch_screens(self):
-		if Bot.check_cooldown(self.last_screen_switch, self.screen_switch_cooldown):
+	def switch_screens(self, force_switch=False):
+		if force_switch or Bot.check_cooldown(self.last_screen_switch, self.screen_switch_cooldown):
 			Bot.find_and_click_asset(self.screens)
 			self.last_screen_switch = datetime.now()
 			return True
@@ -456,9 +556,15 @@ class Bot():
 			screen = Bot.refresh_screen(3)
 
 		if self.edge_loc is None:
+			self.switch_screens(True)
 			self.edge_loc = Bot.find_asset(screen, self.edge)
 		
-		return Bot.find_and_click_asset(self.edge, yoffset=95, screen=screen)
+		edge_found = Bot.find_and_click_asset(self.edge, yoffset=95, screen=screen)
+
+		if not edge_found:
+			self.edge_loc = None
+
+		return edge_found
 
 	def do_functions(self, other_functions_done=False):
 		if not other_functions_done or Bot.check_cooldown(self.last_function_run, self.functions_cooldown):
@@ -576,7 +682,7 @@ class Bot():
 		elif size == 3:
 			screen = autopy.bitmap.capture_screen(((0,125), (390,225)))
 		else:
-			screen = autopy.bitmap.capture_screen(((203,30), (40,30)))
+			screen = autopy.bitmap.capture_screen(((195,30), (40,30)))
 		return screen
 
 	@staticmethod
