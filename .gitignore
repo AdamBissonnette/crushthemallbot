@@ -1,6 +1,9 @@
 old*
 /*.png
 /log.txt
+/test_assets/*
+/debug/*
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
