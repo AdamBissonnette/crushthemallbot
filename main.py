@@ -192,6 +192,8 @@ class Bot():
 			Bot.get_bitmap('assets/ad_exit2.png'),
 			Bot.get_bitmap('assets/ad_exit4.png'),
 			Bot.get_bitmap('assets/ad_exit3.png'),
+			Bot.get_bitmap('assets/ad_exit5.png'),
+			Bot.get_bitmap('assets/ad_exit6.png'),
 		]
 
 		self.goldad_steps = [
@@ -199,6 +201,30 @@ class Bot():
 			Bot.get_bitmap('assets/goldad_step1.png'),
 			Bot.get_bitmap('assets/goldad_end.png'),
 		]
+
+		self.goto_blitz = [
+			Bot.get_bitmap('assets/screen_battle.png'),
+			Bot.get_bitmap('assets/screen_blitz.png'),
+			# battle screen
+			# blitz screen
+		]
+
+		self.goto_bliz_tier = [
+			Bot.get_bitmap('assets/blitz_bronze.png'),
+			Bot.get_bitmap('assets/blitz_silver.png'),
+			Bot.get_bitmap('assets/blitz_gold.png'),
+		]
+
+		#iterative
+		self.do_blitz_rounds = [
+			Bot.get_bitmap('assets/blitz_goto_battle.png'),
+			Bot.get_bitmap('assets/blitz_start_battle.png')
+			#accept reward
+			#next round
+			#next arrow
+		]
+
+		self.broken_stages = []
 
 	def stop(self):
 		self.stopping = True
@@ -250,33 +276,39 @@ class Bot():
 		# self.weapon_cooldown = 0.5
 		# self.last_weapon_run = None
 		# self.check_for_sign_out()
+		# return
 
 		self.last_stage_check = None
 		self.trouble_parsing_stage_count = 0
 		self.max_trouble_parsing_count = 20
 		self.stage_reports = []
-		self.target_stage = 5601
+		self.target_stage = 5826
 		self.ascend_cooldown = 60
 		self.dungeon_cooldown = 600
 		self.exped_cooldown = 600
 		self.weapon_cooldown = 0.5
+		self.blitz_cooldown = 6000
 		self.screen_switch_cooldown = 120
 		self.functions_cooldown = 60
 		self.guild_medal_cooldown = 900
 		self.goldad_cooldown = 1800
 		self.signed_out_check_cooldown = 30
 
-		self.last_guild_medal_run = None #Bot.get_timestamp()
+		self.last_guild_medal_run = Bot.get_timestamp()
 		self.last_dungeon_run = Bot.get_timestamp()
 		self.last_exped_run = Bot.get_timestamp()
 		self.last_weapon_run = None
-		self.last_goldad_run = None #Bot.get_timestamp()
+		self.last_goldad_run = Bot.get_timestamp()
 		self.last_ascend_check = None #Bot.get_timestamp()
 		self.last_screen_switch = None #Bot.get_timestamp()
-		self.last_function_run = Bot.get_timestamp()
+		self.last_function_run = None #Bot.get_timestamp()
 		self.last_signed_out_check = None
+		self.last_blitz_run = None
 		self.stopping = False
-		
+
+		# self.do_functions()
+		# return
+
 		self.switch_screens()
 
 		while not self.stopping:
@@ -285,6 +317,8 @@ class Bot():
 			# start = Bot.get_timestamp()
 			self.check_for_sign_out()
 			# Bot.check_perf("routines ", start)
+			# self.do_blitz()
+			# return
 			self.do_ascend()
 			self.do_speedad()
 			self.do_goldad()
@@ -364,6 +398,14 @@ class Bot():
 
 		self.escape_back(self.decline, 2)
 		self.last_mail_run = Bot.get_timestamp()
+
+	def do_blitz(self):
+		if Bot.check_cooldown(self.last_blitz_run, self.blitz_cooldown):
+			Bot.do_steps(self.goto_blitz)
+
+			for tier in self.goto_bliz_tier:
+				Bot.find_and_click_asset(tier, tolerance=0.2)
+				Bot.do_steps(self.do_blitz_rounds, loop=True)
 
 	def do_guild_medals(self):
 		#goto guild chat
@@ -491,6 +533,10 @@ class Bot():
 			else:
 				stage_number = self.last_stage_check
 				stage_parsed_correctly = False
+				# self.broken_stages.append(stage_number)
+
+				# if len(self.broken_stages > 1):
+				# 	if
 				# screen.save("debug/stage{}.png".format(stage_number))
 
 		self.last_stage_check = stage_number
@@ -702,7 +748,7 @@ class Bot():
 		if Bot.check_cooldown(self.last_weapon_run, self.weapon_cooldown):
 			if self.do_edge(screen):
 				# screen = Bot.refresh_screen(3)
-				if Bot.find_and_click_asset(self.weapons, tolerance=0, screen=screen, yoffset=125):
+				if Bot.find_and_click_asset(self.weapons, tolerance=0.2, screen=screen, yoffset=125):
 					self.last_weapon_run = Bot.get_timestamp()
 					used_weapon = True
 				# self.do_chests(screen)
@@ -726,7 +772,7 @@ class Bot():
 	def do_functions(self, other_functions_done=True):
 		if not other_functions_done or Bot.check_cooldown(self.last_function_run, self.functions_cooldown):
 			Bot.find_and_click_asset(self.collections, tolerance=0.2)
-			Bot.find_and_click_asset(self.functions, 5, tolerance=0.1)
+			Bot.find_and_click_asset(self.functions, 3, tolerance=0.2)
 			self.do_chests()
 			Bot.do_steps(self.escape_menus, 1, True)
 			
