@@ -58,4 +58,5 @@ def get_screenshot(hwnd, maxheight=-1):
         #PrintWindow Succeeded
         im.save("test.png")
 
-get_screenshot(hwnd)
+# get_screenshot(hwnd)
+post_button(hwnd, coords)

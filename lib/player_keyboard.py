@@ -17,7 +17,7 @@ class PlayerKeyboard(Thread):
 		pass
 
 	def on_release(self, key):
-		if key == keyboard.Key.shift_l:
+		if key == keyboard.Key.end:
 			self.stopping = True
 			self.bot.stop()
 			return False
