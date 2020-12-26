@@ -18,6 +18,10 @@ class Bot():
 			Bot.get_bitmap('assets/screen_village.png'),
 		]
 		self.brown_chests = [
+			Bot.get_bitmap('assets/chest1.png'),
+			Bot.get_bitmap('assets/chest2.png'),
+			Bot.get_bitmap('assets/chest3.png'),
+			Bot.get_bitmap('assets/chest4.png'),
 			Bot.get_bitmap('assets/chest_brown.png'),
 			Bot.get_bitmap('assets/chest_brown2.png'),
 			Bot.get_bitmap('assets/chest_brown3.png'),
@@ -89,7 +93,7 @@ class Bot():
 		self.ascend_steps = [
 			Bot.get_bitmap('assets/ascend_step1.png'),
 			[
-				Bot.get_bitmap('assets/ascend_step2_double.png'),
+				# Bot.get_bitmap('assets/ascend_step2_double.png'),
 				Bot.get_bitmap('assets/ascend_step2.png'),
 			],
 			Bot.get_bitmap('assets/ascend_accept.png'),
@@ -102,9 +106,10 @@ class Bot():
 			Bot.get_bitmap('assets/dungeon_step1.png'),
 			# Bot.get_bitmap('assets/dungeon_step2.png'),
 			[
-				Bot.get_bitmap('assets/dungeon_step2.png'),
-				Bot.get_bitmap('assets/dungeon_step2_alt.png'),
-				Bot.get_bitmap('assets/dungeon_enter.png'),
+				Bot.get_bitmap('assets/dungeon_fire.png'),
+				# Bot.get_bitmap('assets/dungeon_step2.png'),
+				# Bot.get_bitmap('assets/dungeon_step2_alt.png'),
+				# Bot.get_bitmap('assets/dungeon_enter.png'),
 			], #top or mid or enter button dungeon
 			Bot.get_bitmap('assets/dungeon_step3.png'), #highest rank dungeon
 			Bot.get_bitmap('assets/decline.png'),
@@ -282,7 +287,7 @@ class Bot():
 		self.trouble_parsing_stage_count = 0
 		self.max_trouble_parsing_count = 20
 		self.stage_reports = []
-		self.target_stage = 5826
+		self.target_stage = 5901
 		self.ascend_cooldown = 60
 		self.dungeon_cooldown = 600
 		self.exped_cooldown = 600
@@ -295,18 +300,29 @@ class Bot():
 		self.signed_out_check_cooldown = 30
 
 		self.last_guild_medal_run = Bot.get_timestamp()
-		self.last_dungeon_run = Bot.get_timestamp()
+		self.last_dungeon_run = None #Bot.get_timestamp()
 		self.last_exped_run = Bot.get_timestamp()
 		self.last_weapon_run = None
 		self.last_goldad_run = Bot.get_timestamp()
 		self.last_ascend_check = None #Bot.get_timestamp()
-		self.last_screen_switch = None #Bot.get_timestamp()
-		self.last_function_run = None #Bot.get_timestamp()
+		self.last_screen_switch = Bot.get_timestamp()
+		self.last_function_run = Bot.get_timestamp()
 		self.last_signed_out_check = None
 		self.last_blitz_run = None
 		self.stopping = False
 
 		# self.do_functions()
+		# self.do_functions()
+		# return False
+		# self.do_weapons()
+		# self.do_speedad()
+		# self.do_goldad()
+		# Bot.find_and_click_asset(self.goldad_steps[2])
+		# self.do_ascend()
+		# needs tuning
+		# return
+		# self.do_dungeon()
+		# self.do_expedition()
 		# return
 
 		self.switch_screens()
@@ -748,7 +764,7 @@ class Bot():
 		if Bot.check_cooldown(self.last_weapon_run, self.weapon_cooldown):
 			if self.do_edge(screen):
 				# screen = Bot.refresh_screen(3)
-				if Bot.find_and_click_asset(self.weapons, tolerance=0.2, screen=screen, yoffset=125):
+				if Bot.find_and_click_asset(self.weapons, tolerance=0.3, screen=screen, yoffset=125):
 					self.last_weapon_run = Bot.get_timestamp()
 					used_weapon = True
 				# self.do_chests(screen)

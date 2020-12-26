@@ -39,3 +39,4 @@ Nox window needs to be in the top lefthand corner of the screen - check the scre
 * overhaul the entire system to use a json+assets config (maybe remote?) instead of code + hotkey to refresh config so the bot can be edited while running AND be used for other games
 * guild boss battles
 * guild wars? arena? blitz? (these are the fun parts so maybe don't want to automate)
+* Explore win32gui for further virtual automation (hwnd = win32gui.FindWindow(None, 'NoxPlayer'), win32gui.PostMessage(hwnd, ))
