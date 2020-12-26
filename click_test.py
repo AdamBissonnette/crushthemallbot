@@ -9,6 +9,14 @@ import ctypes
 hwnd = win32gui.FindWindow(None, 'NoxPlayer')
 coords = win32api.MAKELONG(120, 270)
 
+def callback(hwnd, extra):
+    rect = win32gui.GetWindowRect(hwnd)
+    x = rect[0]
+    y = rect[1]
+    w = rect[2] - x
+    h = rect[3] - y
+    return x, y, w, h
+
 def post_button(hwnd, coords, stime=0.1):
     win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 0, coords)
     win32gui.PostMessage(hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, coords)
@@ -39,7 +47,6 @@ def get_screenshot(hwnd, maxheight=-1):
     saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
     saveDC.SelectObject(saveBitMap)
     result = ctypes.windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), 0)
-    print (result)
 
     bmpinfo = saveBitMap.GetInfo()
     bmpstr = saveBitMap.GetBitmapBits(True)
@@ -54,9 +61,10 @@ def get_screenshot(hwnd, maxheight=-1):
     mfcDC.DeleteDC()
     win32gui.ReleaseDC(hwnd, hwndDC)
 
-    if result == 1:
-        #PrintWindow Succeeded
-        im.save("test.png")
+    return im
+    # if result == 1:
+    #     #PrintWindow Succeeded
+    #     im.save("test.png")
 
 # get_screenshot(hwnd)
-post_button(hwnd, coords)
+# post_button(hwnd, coords)

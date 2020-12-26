@@ -318,7 +318,6 @@ class Bot():
 		self.stopping = False
 
 		# self.do_functions()
-		# self.do_functions()
 		# return False
 		# self.do_weapons()
 		# self.do_speedad()
@@ -363,6 +362,9 @@ class Bot():
 			# start = self.get_timestamp()
 			weapons_done = self.do_weapons()
 			# self.check_perf("weapons", start)
+
+			# if not weapons_done:
+			# 	self.do_functions(weapons_done)
 
 			if self.stopping:
 				continue
@@ -459,7 +461,8 @@ class Bot():
 	def escape_back(self, back_asset=None, times=1):
 		for _ in range(0, times):
 			# autopy.key.tap(autopy.key.Code.ESCAPE)
-			self.post_button_click(leftbutton=False)
+			coords = win32api.MAKELONG(120, 270)
+			self.post_button_click(coords,leftbutton=False)
 			time.sleep(0.3)
 
 			if self.find_and_click_asset(back_asset, tolerance=0.2):
@@ -937,27 +940,27 @@ class Bot():
 		return autopy.bitmap.Bitmap.open(file)
 
 	def refresh_screen(self, size=1):
-		screenshot = self.get_window_screenshot(self.window)
-		screenshot.save("test.png")
-		screen = autopy.bitmap.Bitmap.open("test.png")
+		x,y = self.get_window_screenshot(self.window)
+		# screenshot.save("test.png")
+		# screen = autopy.bitmap.Bitmap.open("test.png")
 
 		# screen = None
-		crop = ((0,0), (390,727))
+		crop = ((x,y), (390,727))
 
 		if size == 1:
-			crop = ((0,0), (390,727))
+			crop = ((x,y), (390,727))
 		elif size == 2:
-			crop = ((0,0), (390,350))
+			crop = ((x,y), (390,350))
 			# screen = autopy.bitmap.capture_screen(((0,0), (390,350)))
 		elif size == 3:
-			crop = ((0,125), (390,225))
+			crop = ((x,y+125), (390,225))
 		else:
-			crop = ((197,30), (40,30))
+			crop = ((x+197,y+30), (40,30))
 
-		if screen:
-			screen = screen.cropped(crop)
-		else:
-			screen = autopy.bitmap.capture_screen(crop)
+		# if screen:
+		# 	screen = screen.cropped(crop)
+		# else:
+		screen = autopy.bitmap.capture_screen(crop)
 
 		return screen
 
@@ -978,26 +981,26 @@ class Bot():
 
 	def get_window_screenshot(self, hwnd, maxheight=-1):
 		left, top, right, bot = win32gui.GetClientRect(hwnd)
-		w = right - left
-		h = bot - top
-		if maxheight > 0:
-			h = maxheight
 
-		hwndDC = win32gui.GetWindowDC(hwnd)
-		mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
-		saveDC = mfcDC.CreateCompatibleDC()
-		saveBitMap = win32ui.CreateBitmap()
-		saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
-		saveDC.SelectObject(saveBitMap)
-		result = ctypes.windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), 0)
+		return left, top
+		# if maxheight > 0:
+		# 	h = maxheight
 
-		bmpinfo = saveBitMap.GetInfo()
-		bmpstr = saveBitMap.GetBitmapBits(True)
+		# hwndDC = win32gui.GetWindowDC(hwnd)
+		# mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
+		# saveDC = mfcDC.CreateCompatibleDC()
+		# saveBitMap = win32ui.CreateBitmap()
+		# saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
+		# saveDC.SelectObject(saveBitMap)
+		# result = ctypes.windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), 0)
 
-		return Image.frombuffer(
-			'RGB',
-			(bmpinfo['bmWidth'], bmpinfo['bmHeight']),
-			bmpstr, 'raw', 'BGRX', 0, 1)
+		# bmpinfo = saveBitMap.GetInfo()
+		# bmpstr = saveBitMap.GetBitmapBits(True)
+
+		# return Image.frombuffer(
+		# 	'RGB',
+		# 	(bmpinfo['bmWidth'], bmpinfo['bmHeight']),
+		# 	bmpstr, 'raw', 'BGRX', 0, 1)
 
 	def check_cooldown(self, last_use, cooldown, log=False):
 		start = self.get_timestamp()
