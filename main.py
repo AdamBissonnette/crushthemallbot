@@ -389,7 +389,7 @@ class Bot():
 		self.trouble_parsing_stage_count = 0
 		self.max_trouble_parsing_count = 5
 		self.stage_reports = []
-		self.target_stage = 6875
+		self.target_stage = 6876
 		self.ascend_cooldown = 60
 		self.dungeon_cooldown = 1200
 		self.exped_cooldown = 600

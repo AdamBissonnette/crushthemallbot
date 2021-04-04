@@ -22,11 +22,15 @@ Python 3+
 
 Nox window needs to be in the top lefthand corner of the screen - check the screen.png file for reference on exact size. Adjust the assets as needed (screenshot + overwrite the files in paint if needed) - probably want to change your special abilities and preferred guild medal.
 
-## Sizing
+## Sizing & Settings
 
+- Preferred Emulator Nox (only use a single instance)
 - 1920 x 1080 display resolution
 - Basic Mode (Direct X) 540x960 mobile phone
 - Low quality mode in-game
+- High (2 Core CPU, 4096 MB Memory)
+- Shortcut settings -> Enable Back Key and "Set the right mouse button at the same time"
+- If you want to use Bluestacks or another emulator instead you'll need to find a way to bind the right mouse button to the back button and you'll need to make some code adjustments (change references to the Nox window to the Bluestacks window in the powershell script and opening lines in the main.py Bot class)
 
 ## Running and Stopping 
 
