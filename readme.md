@@ -4,13 +4,19 @@
 
 Python 3+
 
-* pip install autopy
-* pip install pillow
-* pip install pynput
-* pip install louie
-* https://github.com/tesseract-ocr/tesseract
-* pip install pytesseract
-* pip install tesseract
+* Install external screen reader lib https://github.com/tesseract-ocr/tesseract
+    * .exe install here https://github.com/UB-Mannheim/tesseract/wiki
+* pip install -r requirements.txt
+    * Will install the following
+    * pip install autopy
+    * pip install pillow
+    * pip install pynput
+    * pip install louie
+    * pip install pytesseract
+    * pip install tesseract
+	* pip install pywin32
+	* pip install pywin32-ctypes
+* pip install pypiwin32 (might need this?)
 
 ## Setup
 

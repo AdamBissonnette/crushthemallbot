@@ -1,0 +1,8 @@
+autopy
+pillow
+pynput
+louie
+pytesseract
+tesseract
+pywin32
+pywin32-ctypes
