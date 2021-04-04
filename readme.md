@@ -16,6 +16,12 @@ Python 3+
 
 Nox window needs to be in the top lefthand corner of the screen - check the screen.png file for reference on exact size. Adjust the assets as needed (screenshot + overwrite the files in paint if needed) - probably want to change your special abilities and preferred guild medal.
 
+## Sizing
+
+- 1920 x 1080 display resolution
+- Basic Mode (Direct X) 540x960 mobile phone
+- Low quality mode in-game
+
 ## Features so far
 
 * Image recognition for assets used to navigate around and use abilities off cooldown
