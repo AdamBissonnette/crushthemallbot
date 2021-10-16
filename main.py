@@ -77,6 +77,7 @@ class Bot():
 			self.os_error,
 			self.screen_saver,
 			self.get_bitmap('assets/game_still_running_okay2.png'),
+			self.get_bitmap('assets/reward_get.png')
 		]
 		self.upgrade_villages = [
 			self.get_bitmap('assets/function_upgrade_heroes.png'),
@@ -256,6 +257,9 @@ class Bot():
 			self.get_bitmap('assets/ad_exit17.png.gs.png', False),
 		]
 		self.ad_exit = [
+			self.get_bitmap('assets/ad_exit0.png', False),
+			self.get_bitmap('assets/ad_exit18.png', False),
+			self.get_bitmap('assets/ad_exit19.png', False),
 			self.get_bitmap('assets/ad_exit1.png', False),
 			self.get_bitmap('assets/ad_exit2.png', False),
 			self.get_bitmap('assets/ad_exit3.png', False),
@@ -269,6 +273,7 @@ class Bot():
 			self.get_bitmap('assets/ad_exit15.png', False),
 			self.get_bitmap('assets/ad_exit16.png', False),
 			self.get_bitmap('assets/ad_exit17.png', False),
+			self.get_bitmap('assets/ad_retry.png', False),
 		]
 
 		self.ad_close = [
@@ -453,15 +458,15 @@ class Bot():
 		self.trouble_parsing_stage_count = 0
 		self.max_trouble_parsing_count = 5
 		self.stage_reports = []
-		self.target_stage = 7965
+		self.target_stage = 8415
 		self.ascend_cooldown = 60
-		self.dungeon_cooldown = 1100
+		self.dungeon_cooldown = 900
 		self.exped_cooldown = 600
-		self.weapon_cooldown = 0.65
+		self.weapon_cooldown = 1 #0.65
 		self.blitz_cooldown = 6000
 		self.screen_switch_cooldown = 120
 		self.functions_cooldown = 60
-		self.guild_medal_cooldown = 900
+		self.guild_medal_cooldown = 915
 		self.goldad_cooldown = 1000
 		self.signed_out_check_cooldown = 30
 		self.slay_bosses_cooldown = 600
@@ -908,15 +913,17 @@ class Bot():
 
 			ad_complete = False
 			ad_timeout = timeout
-			adcrash_timeout = timeout * 9
+			adcrash_timeout = 30
 			adstart = self.get_timestamp()
+			iteration = 0
 			while not ad_complete:
+				iteration += 1
 				# self.print_log("starting loop")
 				# if self.check_cooldown(adstart, adcrash_timeout):
 				# 	self.print_log("restart app")
 				# 	self.restart_app()
 				# 	return False
-				ad_complete = self.check_if_ad_is_done(ad_timeout, self.check_cooldown(adstart, adcrash_timeout))
+				ad_complete = self.check_if_ad_is_done(ad_timeout, self.check_cooldown(adstart, adcrash_timeout), iteration)
 
 			#ad is now complete
 			self.escape_back(self.decline, 3)
@@ -971,8 +978,8 @@ class Bot():
 			self.find_and_click_asset(self.get_bitmap("assets/gamequit_x.png"), tolerance=0.2)
 			time.sleep(10)
 		
-	def check_if_ad_is_done(self, timeout, close=False):
-		# self.print_log("Checking if ad is done")
+	def check_if_ad_is_done(self, timeout, close=False, iteration=0):
+		self.print_log("Checking if ad is done #" + str(iteration))
 
 		timestamp = datetime.now().strftime("%H:%M:%S")
 		exit_screen = self.refresh_screen(2)
@@ -991,8 +998,8 @@ class Bot():
 		if close:
 			self.print_log("executing ad close function")
 			
-			screen = self.refresh_screen()
-			screen.save("ads_debug/ad_" + str(self.stage_number) + ".png")
+			# screen = self.refresh_screen()
+			# screen.save("ads_debug/ad_" + str(self.stage_number) + ".png")
 
 			exit_screen = self.refresh_screen(2)
 			exit_screen.save('temp.png')
@@ -1004,7 +1011,10 @@ class Bot():
 			# (364.0, 67.0)
 
 			if not found:
-				self.click_asset((364.0, 67.0)) # Guess at the general areas
+				if iteration < 12:
+					self.click_asset((364.0, 67.0)) # Guess at the general areas
+				else:
+					self.click_asset((373.0, 50.0))
 			# exit_found = self.escape_back(self.ad_close, 2, tolerance=0.3)
 			time.sleep(3)
 			if self.is_in_main_area():
